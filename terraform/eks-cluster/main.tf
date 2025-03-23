@@ -24,7 +24,7 @@ module "eks" {
   }
 
   cluster_endpoint_public_access           = true
-  enable_cluster_creator_admin_permissions = false
+  enable_cluster_creator_admin_permissions = true
 
   enable_irsa = true # To create a OIDC provider/issuer for this cluster to be able to create IRSAs
 

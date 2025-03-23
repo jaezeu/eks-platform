@@ -123,24 +123,6 @@ jobs:
           role-to-assume: ${{ env.OIDC_ROLE }}
           aws-region: ${{ inputs.region }}
       
-      - name: Check and create EKS access entry for OIDC role
-        run: |
-          access_entry=$(aws eks list-access-entries --cluster-name ${{ needs.deploy.outputs.cluster_name }} --query "accessEntries[?principal=='${OIDC_ROLE}']" --output json)
-          if [ "$access_entry" != "[]" ]; then
-                policy=$(echo "$access_entry" | jq -r '.[0].accessPolicy')
-  
-            if [[ "$policy" == *"AmazonEKSClusterAdminPolicy"* ]]; then
-              echo "Role is already present with the correct access policy."
-            else
-              echo "Role found, but without the required access policy. Attaching policy..."
-              aws eks associate-access-policy --cluster-name ${{ needs.deploy.outputs.cluster_name }} --principal-arn ${{ env.OIDC_ROLE }} --policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy --access-scope=cluster
-            fi
-          else
-            echo "Role not found. Creating access entry and attaching cluster admin policy..."
-            aws eks create-access-entry --cluster-name ${{ needs.deploy.outputs.cluster_name }} --principal-arn ${{ env.OIDC_ROLE }}
-            aws eks associate-access-policy --cluster-name ${{ needs.deploy.outputs.cluster_name }} --principal-arn ${{ env.OIDC_ROLE }} --policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy --access-scope=cluster
-          fi
-
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
