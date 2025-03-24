@@ -136,7 +136,7 @@ jobs:
       - name: Deploy ExternalDNS for Route53
         if: ${{ github.event.inputs.external-dns == 'true' }}
         env:
-          REGION: ${{ github.event.inputs.aws-region }}
+          REGION: ${{ github.event.inputs.region }}
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
         run: |
           cd addons/r53-externaldns
