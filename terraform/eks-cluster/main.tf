@@ -6,7 +6,7 @@ locals {
   base_addons = {
     coredns                = {}
     eks-pod-identity-agent = {}
-    aws-ebs-csi-driver     = {
+    aws-ebs-csi-driver = {
       service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
     }
   }
@@ -16,17 +16,18 @@ locals {
     vpc-cni    = {}
   }
 
-  cluster_addons = merge(
+  # Conditionally merge addons only if deploy_cluster_addons is true.
+  cluster_addons = var.deploy_cluster_addons ? merge(
     local.base_addons,
     var.enable_default_network_addons ? local.default_network_addons : {}
-  )
+  ) : {}
 }
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  bootstrap_self_managed_addons = var.bootstrap_self_managed_addons
+  bootstrap_self_managed_addons = true
 
   cluster_name    = "shared-eks-cluster"
   cluster_version = "1.31"

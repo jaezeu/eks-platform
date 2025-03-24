@@ -36,8 +36,8 @@ variable "enable_default_network_addons" {
   default     = true
 }
 
-variable "bootstrap_self_managed_addons" {
-  description = "Set to true to bootstrap self managed addons"
+variable "deploy_cluster_addons" {
   type        = bool
+  description = "Deploy cluster addons (base and optionally default network addons)"
   default     = true
 }

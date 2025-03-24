@@ -151,7 +151,7 @@ jobs:
           TF_VAR_region: ${{ inputs.region }}
           TF_VAR_deploy_node_groups: "false"
           TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_bootstrap_self_managed_addons: "false"
+          TF_VAR_deploy_cluster_addons: "false"
         run: terraform plan
 
       - name: Terraform Apply (Without Node Groups)
@@ -160,7 +160,7 @@ jobs:
           TF_VAR_region: ${{ inputs.region }}
           TF_VAR_deploy_node_groups: "false"
           TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_bootstrap_self_managed_addons: "false"
+          TF_VAR_deploy_cluster_addons: "false"
         run: terraform apply -auto-approve
 
       - name: Export terraform outputs
@@ -194,7 +194,7 @@ jobs:
           TF_VAR_region: ${{ inputs.region }}
           TF_VAR_deploy_node_groups: "true"
           TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_bootstrap_self_managed_addons: "true"
+          TF_VAR_deploy_cluster_addons: "true"
         run: terraform plan
 
       - name: Terraform Apply (With Node Groups)
@@ -203,7 +203,7 @@ jobs:
           TF_VAR_region: ${{ inputs.region }}
           TF_VAR_deploy_node_groups: "true"
           TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_bootstrap_self_managed_addons: "true"
+          TF_VAR_deploy_cluster_addons: "true"
         run: terraform apply -auto-approve
 
   get_cluster_info:
