@@ -35,3 +35,9 @@ variable "enable_default_network_addons" {
   type        = bool
   default     = true
 }
+
+variable "bootstrap_self_managed_addons" {
+  description = "Set to true to bootstrap self managed addons"
+  type        = bool
+  default     = true
+}

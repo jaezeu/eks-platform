@@ -26,7 +26,7 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  bootstrap_self_managed_addons = true
+  bootstrap_self_managed_addons = var.bootstrap_self_managed_addons
 
   cluster_name    = "shared-eks-cluster"
   cluster_version = "1.31"
