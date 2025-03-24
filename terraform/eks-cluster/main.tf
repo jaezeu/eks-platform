@@ -2,6 +2,24 @@ locals {
   # Add more user groups if required to grant admin access since this is sandbox account
   merged_users  = concat(data.aws_iam_group.ce8.users, data.aws_iam_group.instructor.users)
   user_arn_list = [for obj in local.merged_users : obj["arn"]]
+
+  base_addons = {
+    coredns                = {}
+    eks-pod-identity-agent = {}
+    aws-ebs-csi-driver     = {
+      service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
+    }
+  }
+
+  default_network_addons = {
+    kube-proxy = {}
+    vpc-cni    = {}
+  }
+
+  cluster_addons = merge(
+    local.base_addons,
+    var.enable_default_network_addons ? local.default_network_addons : {}
+  )
 }
 
 module "eks" {
@@ -13,34 +31,25 @@ module "eks" {
   cluster_name    = "shared-eks-cluster"
   cluster_version = "1.31"
 
-  cluster_addons = {
-    coredns                = {}
-    eks-pod-identity-agent = {}
-    kube-proxy             = {}
-    vpc-cni                = {}
-    aws-ebs-csi-driver = {
-      service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
-    }
-  }
+  cluster_addons = local.cluster_addons
 
   cluster_endpoint_public_access           = true
-  enable_cluster_creator_admin_permissions = true
+  enable_cluster_creator_admin_permissions = false
 
-  enable_irsa = true # To create a OIDC provider/issuer for this cluster to be able to create IRSAs
+  enable_irsa = true
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
-  eks_managed_node_groups = {
+  eks_managed_node_groups = var.deploy_node_groups ? {
     learner_ng = {
       ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = ["m5.large"]
-
-      min_size     = 3
-      max_size     = 5
-      desired_size = 3
+      min_size       = 3
+      max_size       = 5
+      desired_size   = 3
     }
-  }
+  } : {}
 
   access_entries = {
     for arn in local.user_arn_list : arn => {

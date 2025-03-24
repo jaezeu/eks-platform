@@ -20,3 +20,18 @@ variable "enable_ebs_csi_driver_role" {
   type    = bool
   default = true
 }
+
+
+########## Cilium Variables ###########
+
+variable "deploy_node_groups" {
+  description = "Set to true to deploy node groups"
+  type        = bool
+  default     = true
+}
+
+variable "enable_default_network_addons" {
+  description = "Set to true to enable default network addons"
+  type        = bool
+  default     = true
+}
