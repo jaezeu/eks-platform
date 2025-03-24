@@ -9,7 +9,7 @@ on:
         default: "ap-southeast-1"
       nginx-ingress:
         type: choice
-        description: "Deploy Nginx Ingress Controller? (true/false)"
+        description: "Deploy Nginx Ingress Controller?"
         options:
           - "true"
           - "false"
@@ -17,7 +17,7 @@ on:
         required: true
       external-dns:
         type: choice
-        description: "Deploy ExternalDNS? (true/false)"
+        description: "Deploy ExternalDNS?"
         options:
           - "true"
           - "false"
@@ -25,7 +25,7 @@ on:
         required: true
       cert-manager:
         type: choice
-        description: "Deploy CertManager? (true/false)"
+        description: "Deploy CertManager?"
         options:
           - "true"
           - "false"
@@ -33,7 +33,7 @@ on:
         required: true
       argocd:
         type: choice
-        description: "Deploy ArgoCD? (true/false)"
+        description: "Deploy ArgoCD?"
         options:
           - "true"
           - "false"
@@ -41,7 +41,7 @@ on:
         required: true
       monitoring:
         type: choice
-        description: "Deploy Prometheus and Grafana? (true/false)"
+        description: "Deploy Prometheus and Grafana?"
         options:
           - "true"
           - "false"
@@ -49,7 +49,7 @@ on:
         required: true
       logging:
         type: choice
-        description: "Deploy Loki? (true/false)"
+        description: "Deploy Loki?"
         options:
           - "true"
           - "false"
@@ -139,7 +139,7 @@ jobs:
           REGION: ${{ github.event.inputs.aws-region }}
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
         run: |
-          cd addons/r53-external-dns
+          cd addons/r53-externaldns
           envsubst < values.yaml
           chmod +x init.sh
           ./init.sh
