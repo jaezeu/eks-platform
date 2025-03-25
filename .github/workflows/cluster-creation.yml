@@ -53,11 +53,10 @@ env:
 jobs:
   deploy:
     name: Create Cluster
-    if: ${{ github.event.inputs.cilium == 'false' }}
     runs-on: ubuntu-latest
     outputs:
-      cluster_name: ${{ steps.tfout.outputs.CLUSTER_NAME }}
-      external_dns_role_arn: ${{ steps.tfout.outputs.EXTERNAL_DNS_ROLE_ARN }}
+      cluster_name: ${{ steps.deploy_steps.outputs.CLUSTER_NAME }}
+      external_dns_role_arn: ${{ steps.deploy_steps.outputs.EXTERNAL_DNS_ROLE_ARN }}
 
     steps:
       - name: Checkout code
@@ -82,7 +81,9 @@ jobs:
         id: deploy_steps
         run: |
           if [ "${{ github.event.inputs.cilium }}" == "true" ]; then
-            echo "Deploying cluster with Cilium branch"
+            echo "Deploying cluster with Cilium Config"
+
+            echo "Creating cluster with no node group"
             terraform plan -var="region=${{ inputs.region }}" \
               -var="deploy_node_groups=false" \
               -var="enable_default_network_addons=false" \
@@ -90,12 +91,10 @@ jobs:
               -out=cluster-wo-nodegroups.out
             terraform apply -auto-approve cluster-wo-nodegroups.out
 
-            # Export intermediate outputs
             export CLUSTER_NAME=$(terraform output -raw cluster_name)
             export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
             export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
 
-            # Update kubeconfig and install Cilium
             aws eks update-kubeconfig --name "$CLUSTER_NAME"
             helm repo add cilium https://helm.cilium.io/
             helm repo update
@@ -109,7 +108,7 @@ jobs:
               --set k8sServicePort=443 \
               --set kubeProxyReplacement=true
 
-            # Re-run Terraform with node groups and addons enabled
+            echo "Creating cluster with node group"
             terraform plan -var="region=${{ inputs.region }}" \
               -var="deploy_node_groups=true" \
               -var="enable_default_network_addons=false" \
