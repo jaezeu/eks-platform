@@ -3,24 +3,21 @@ locals {
   merged_users  = concat(data.aws_iam_group.ce8.users, data.aws_iam_group.instructor.users)
   user_arn_list = [for obj in local.merged_users : obj["arn"]]
 
-  base_addons = {
-    coredns                = {}
-    eks-pod-identity-agent = {}
-    aws-ebs-csi-driver = {
-      service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
-    }
-  }
-
-  default_network_addons = {
-    kube-proxy = {}
-    vpc-cni    = {}
-  }
-
-  # Conditionally merge addons only if deploy_cluster_addons is true.
-  cluster_addons = var.deploy_cluster_addons ? merge(
-    local.base_addons,
-    var.enable_default_network_addons ? local.default_network_addons : {}
-  ) : {}
+  cluster_addons = merge(
+    {
+      "eks-pod-identity-agent" = {}
+    },
+    var.deploy_cluster_addons ? {
+      "coredns" = {}
+      "aws-ebs-csi-driver" = {
+        service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
+      }
+    } : {},
+    var.enable_default_network_addons ? {
+      "kube-proxy" = {}
+      "vpc-cni"    = {}
+    } : {}
+  )
 }
 
 module "eks" {
