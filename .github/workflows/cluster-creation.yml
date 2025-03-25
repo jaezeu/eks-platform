@@ -83,11 +83,11 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.cilium }}" == "true" ]; then
             echo "Deploying cluster with Cilium branch"
-            terraform plan -var="TF_VAR_region=${{ inputs.region }}" \
-              -var="TF_VAR_deploy_node_groups=false" \
-              -var="TF_VAR_enable_default_network_addons=false" \
-              -var="TF_VAR_deploy_cluster_addons=false" \
-              -out=plan.out
+            terraform plan -var="region=${{ inputs.region }}" \
+              -var="deploy_node_groups=false" \
+              -var="enable_default_network_addons=false" \
+              -var="deploy_cluster_addons=false" \
+              -out=cluster-wo-nodegroups.out
             terraform apply -auto-approve cluster-wo-nodegroups.out
 
             # Export intermediate outputs
@@ -110,15 +110,15 @@ jobs:
               --set kubeProxyReplacement=true
 
             # Re-run Terraform with node groups and addons enabled
-            terraform plan -var="TF_VAR_region=${{ inputs.region }}" \
-              -var="TF_VAR_deploy_node_groups=true" \
-              -var="TF_VAR_enable_default_network_addons=false" \
-              -var="TF_VAR_deploy_cluster_addons=true" \
-              -out=plan2.out
+            terraform plan -var="region=${{ inputs.region }}" \
+              -var="deploy_node_groups=true" \
+              -var="enable_default_network_addons=false" \
+              -var="deploy_cluster_addons=true" \
+              -out=cluster-with-nodegroups.out
             terraform apply -auto-approve cluster-with-nodegroups.out
           else
             echo "Deploying cluster with default networking"
-            terraform plan -var="TF_VAR_region=${{ inputs.region }}"
+            terraform plan -var="region=${{ inputs.region }}"
             terraform apply -auto-approve
 
             export CLUSTER_NAME=$(terraform output -raw cluster_name)
