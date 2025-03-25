@@ -32,7 +32,7 @@ module "eks" {
   cluster_addons = local.cluster_addons
 
   cluster_endpoint_public_access           = true
-  enable_cluster_creator_admin_permissions = false
+  enable_cluster_creator_admin_permissions = true
 
   enable_irsa = true
 
