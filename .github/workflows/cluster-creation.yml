@@ -8,60 +8,39 @@ on:
         required: true
         default: "ap-southeast-1"
       cilium:
-        type: choice
+        type: boolean
         description: "Deploy with Cilium?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
       nginx-ingress:
-        type: choice
+        type: boolean
         description: "Deploy Nginx Ingress Controller?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
       external-dns:
-        type: choice
+        type: boolean
         description: "Deploy ExternalDNS?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
       cert-manager:
-        type: choice
+        type: boolean
         description: "Deploy CertManager?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
       argocd:
-        type: choice
+        type: boolean
         description: "Deploy ArgoCD?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
       monitoring:
-        type: choice
+        type: boolean
         description: "Deploy Prometheus and Grafana?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
       logging:
-        type: choice
+        type: boolean
         description: "Deploy Loki?"
-        options:
-          - "true"
-          - "false"
-        default: "false"
+        default: false
         required: true
 
 permissions:
@@ -99,136 +78,61 @@ jobs:
         run: terraform init
         working-directory: ./terraform/eks-cluster
 
-      - name: Terraform Plan
-        working-directory: ./terraform/eks-cluster
-        env:
-          TF_VAR_region: ${{ inputs.region }}
-        run: terraform plan
-        
-      - name: Terraform Apply
-        working-directory: ./terraform/eks-cluster
-        env:
-          TF_VAR_region: ${{ inputs.region }}
-        run: terraform apply -auto-approve
-
-      - name: Export terraform outputs
-        working-directory: ./terraform/eks-cluster
-        id: tfout
-        run: |
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
-          echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-  
-  deploy_cilium_cluster:
-    name: Create Cluster with Cilium
-    if: ${{ github.event.inputs.cilium == 'true' }}
-    runs-on: ubuntu-latest
-    outputs:
-      cluster_name: ${{ steps.tfout.outputs.CLUSTER_NAME }}
-      external_dns_role_arn: ${{ steps.tfout.outputs.EXTERNAL_DNS_ROLE_ARN }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.OIDC_ROLE }}
-          aws-region: ${{ inputs.region }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_wrapper: false
-        
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./terraform/eks-cluster
-
-      - name: Terraform Plan (Without Node Groups)
-        working-directory: ./terraform/eks-cluster
-        env:
-          TF_VAR_region: ${{ inputs.region }}
-          TF_VAR_deploy_node_groups: "false"
-          TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_deploy_cluster_addons: "false"
-        run: terraform plan
-
-      - name: Terraform Apply (Without Node Groups)
-        working-directory: ./terraform/eks-cluster
-        env:
-          TF_VAR_region: ${{ inputs.region }}
-          TF_VAR_deploy_node_groups: "false"
-          TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_deploy_cluster_addons: "false"
-        run: terraform apply -auto-approve
-
-      - name: Export terraform outputs
-        working-directory: ./terraform/eks-cluster
-        id: tfout
-        run: |
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
-          echo "CLUSTER_ENDPOINT"=$(terraform output -raw cluster_endpoint) >> $GITHUB_OUTPUT
-          echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ${{ steps.tfout.outputs.CLUSTER_NAME }}
-
-      - name: Deploy Cilium
-        run: |
-          helm repo add cilium https://helm.cilium.io/
-          helm repo update
-          helm install cilium cilium/cilium --version 1.16.7 \
-            --namespace kube-system \
-            --set eni.enabled=true \
-            --set ipam.mode=eni \
-            --set egressMasqueradeInterfaces=eth0 \
-            --set routingMode=native \
-            --set k8sServiceHost=${{ steps.tfout.outputs.CLUSTER_ENDPOINT }} \
-            --set k8sServicePort=443 \
-            --set kubeProxyReplacement=true
-
-      - name: Terraform Plan (With Node Groups)
-        working-directory: ./terraform/eks-cluster
-        env:
-          TF_VAR_region: ${{ inputs.region }}
-          TF_VAR_deploy_node_groups: "true"
-          TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_deploy_cluster_addons: "true"
-        run: terraform plan
-
-      - name: Terraform Apply (With Node Groups)
-        working-directory: ./terraform/eks-cluster
-        env:
-          TF_VAR_region: ${{ inputs.region }}
-          TF_VAR_deploy_node_groups: "true"
-          TF_VAR_enable_default_network_addons: "false"
-          TF_VAR_deploy_cluster_addons: "true"
-        run: terraform apply -auto-approve
-
-  get_cluster_info:
-    name: Get Cluster Info
-    if: always()
-    runs-on: ubuntu-latest
-    needs: [deploy, deploy_cilium_cluster]
-    outputs:
-      cluster_name: ${{ steps.set_outputs.outputs.cluster_name }}
-      external_dns_role_arn: ${{ steps.set_outputs.outputs.external_dns_role_arn }}
-    steps:
-      - name: Set Outputs
-        id: set_outputs
+      - name: Deploy Cluster
+        id: deploy_steps
         run: |
           if [ "${{ github.event.inputs.cilium }}" == "true" ]; then
-            echo "cluster_name=${{ needs.deploy_cilium_cluster.outputs.cluster_name }}" >> $GITHUB_OUTPUT
-            echo "external_dns_role_arn=${{ needs.deploy_cilium_cluster.outputs.external_dns_role_arn }}" >> $GITHUB_OUTPUT
+            echo "Deploying cluster with Cilium branch"
+            terraform plan -var="TF_VAR_region=${{ inputs.region }}" \
+              -var="TF_VAR_deploy_node_groups=false" \
+              -var="TF_VAR_enable_default_network_addons=false" \
+              -var="TF_VAR_deploy_cluster_addons=false" \
+              -out=plan.out
+            terraform apply -auto-approve cluster-wo-nodegroups.out
+
+            # Export intermediate outputs
+            export CLUSTER_NAME=$(terraform output -raw cluster_name)
+            export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
+            export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
+
+            # Update kubeconfig and install Cilium
+            aws eks update-kubeconfig --name "$CLUSTER_NAME"
+            helm repo add cilium https://helm.cilium.io/
+            helm repo update
+            helm install cilium cilium/cilium --version 1.16.7 \
+              --namespace kube-system \
+              --set eni.enabled=true \
+              --set ipam.mode=eni \
+              --set egressMasqueradeInterfaces=eth0 \
+              --set routingMode=native \
+              --set k8sServiceHost=$CLUSTER_ENDPOINT \
+              --set k8sServicePort=443 \
+              --set kubeProxyReplacement=true
+
+            # Re-run Terraform with node groups and addons enabled
+            terraform plan -var="TF_VAR_region=${{ inputs.region }}" \
+              -var="TF_VAR_deploy_node_groups=true" \
+              -var="TF_VAR_enable_default_network_addons=false" \
+              -var="TF_VAR_deploy_cluster_addons=true" \
+              -out=plan2.out
+            terraform apply -auto-approve cluster-with-nodegroups.out
           else
-            echo "cluster_name=${{ needs.deploy.outputs.cluster_name }}" >> $GITHUB_OUTPUT
-            echo "external_dns_role_arn=${{ needs.deploy.outputs.external_dns_role_arn }}" >> $GITHUB_OUTPUT
+            echo "Deploying cluster with default networking"
+            terraform plan -var="TF_VAR_region=${{ inputs.region }}"
+            terraform apply -auto-approve
+
+            export CLUSTER_NAME=$(terraform output -raw cluster_name)
+            export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
           fi
+
+          # Write outputs to a file to be read by subsequent steps
+          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_OUTPUT
+          echo "EXTERNAL_DNS_ROLE_ARN=$EXTERNAL_DNS_ROLE_ARN" >> $GITHUB_OUTPUT
+        working-directory: ./terraform/eks-cluster
 
   bootstrap:
     runs-on: ubuntu-latest
-    needs: [get_cluster_info]
+    needs: [deploy]
 
     steps:
       - name: Checkout code
@@ -241,7 +145,7 @@ jobs:
           aws-region: ${{ inputs.region }}
       
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ${{ needs.get_cluster_info.outputs.cluster_name }}
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
       - name: Deploy Nginx Ingress Controller
         if: ${{ github.event.inputs.nginx-ingress == 'true' }}
@@ -254,10 +158,11 @@ jobs:
         if: ${{ github.event.inputs.external-dns == 'true' }}
         env:
           REGION: ${{ github.event.inputs.region }}
-          EXTERNAL_DNS_ROLE_ARN: ${{ needs.get_cluster_info.outputs.external_dns_role_arn }}
+          EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
         run: |
           cd addons/r53-externaldns
-          envsubst < values.yaml
+          envsubst < values.yaml > updated-values.yaml
+          mv updated-values.yaml values.yaml
           chmod +x init.sh
           ./init.sh
 
