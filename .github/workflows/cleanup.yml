@@ -47,14 +47,22 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ steps.tfout.outputs.CLUSTER_NAME }}
 
-      - name: Uninstall all Helm releases
+      - name: Uninstall all Helm releases except external-dns
         run: |
-          helm list -A -o json | jq -r '.[] | "\(.name) \(.namespace)"' | while read release ns
-          do
+          helm list -A -o json | jq -r '.[] | select(.name != "external-dns") | "\(.name) \(.namespace)"' | while read release ns; do
             echo "Uninstalling Helm release: $release in namespace: $ns"
             helm uninstall "$release" -n "$ns" || true
           done
 
+      - name: Wait for external-dns to sync DNS removals
+        run: sleep 60
+
+      - name: Uninstall external-dns Helm release
+        run: |
+          external_dns_namespace=$(helm list -A -o json | jq -r '.[] | select(.name == "external-dns") | "\(.namespace)"')
+          echo "Uninstalling external-dns from namespace: $external_dns_namespace"
+          helm uninstall external-dns -n "$external_dns_namespace" || true
+          
       - name: Delete all remaining K8s resources
         run: |
           kubectl delete all --all -A || true
