@@ -106,7 +106,7 @@ jobs:
 
             helm repo add cilium https://helm.cilium.io/
             helm repo update
-            helm install cilium cilium/cilium --version 1.16.7 \
+            helm upgrade --install cilium cilium/cilium --version 1.16.7 \
               --namespace kube-system \
               --set eni.enabled=true \
               --set ipam.mode=eni \
@@ -118,6 +118,8 @@ jobs:
               --set ingressController.enabled=true \
               --set ingressController.loadbalancerMode=dedicated
               --set gatewayAPI.enabled=true
+              --set hubble.relay.enabled=true
+              --set hubble.ui.enabled=true
 
             echo "Creating cluster with node group"
             terraform plan -var="region=${{ inputs.region }}" \
