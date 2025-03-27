@@ -106,7 +106,9 @@ jobs:
               --set routingMode=native \
               --set k8sServiceHost=$CLUSTER_ENDPOINT \
               --set k8sServicePort=443 \
-              --set kubeProxyReplacement=true
+              --set kubeProxyReplacement=true \
+              --set ingressController.enabled=true \
+              --set ingressController.loadbalancerMode=dedicated
 
             echo "Creating cluster with node group"
             terraform plan -var="region=${{ inputs.region }}" \
