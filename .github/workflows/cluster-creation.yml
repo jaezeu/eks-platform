@@ -124,6 +124,10 @@ jobs:
               --set hubble.relay.enabled=true \
               --set hubble.ui.enabled=true
 
+            echo "Removing kubeproxy & VPC CNI daemon sets if exists"
+            kubectl delete ds kube-proxy -n kube-system --ignore-not-found=true
+            kubectl delete ds aws-node -n kube-system --ignore-not-found=true
+
             echo "Creating cluster with node group"
             terraform plan -var="region=${{ inputs.region }}" \
               -var="deploy_node_groups=true" \
