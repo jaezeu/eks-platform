@@ -2,8 +2,16 @@ provider:
   name: aws
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: ${EXTERNAL_DNS_ROLE_ARN} #arn:aws:iam::255945442255:role/externaldns-oidc-role  # The external-dns role ARN
+    eks.amazonaws.com/role-arn: ${EXTERNAL_DNS_ROLE_ARN}  # The external-dns role ARN
 env:
   - name: AWS_DEFAULT_REGION
     value: ${REGION} # change to region where EKS is installed
 policy: sync # Default is upsert-only
+txtOwnerId: ${CLUSTER_NAME} # e.g. shared-eks-cluster
+sources:
+  - ingress
+  - service
+  - gateway-httproute
+  - gateway-tlsroute
+logLevel: info #[panic, debug, info, warning, error, fatal]
+logFormat: text # text / json

@@ -1,3 +1,4 @@
+# This workflow creates the EKS cluster and deploy the addons as specified in the inputs
 name: Cluster Creation & Helm Bootstrap
 
 on:
@@ -9,7 +10,7 @@ on:
         default: "ap-southeast-1"
       cilium:
         type: boolean
-        description: "Deploy with Cilium?"
+        description: "Deploy Cilium? (Cilium Ingress & Gateway API)"
         default: false
         required: true
       nginx-ingress:
@@ -178,6 +179,7 @@ jobs:
         env:
           REGION: ${{ github.event.inputs.region }}
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
+          CLUSTER_NAME: ${{ needs.deploy.outputs.cluster_name }}
         run: |
           cd addons/r53-externaldns
           envsubst < values.yaml > updated-values.yaml

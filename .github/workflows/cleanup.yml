@@ -1,3 +1,4 @@
+# This workflow cleans up all helm charts deployed within the EKS cluster and destroys the cluster once done.
 name: Cleanup
 
 on:
