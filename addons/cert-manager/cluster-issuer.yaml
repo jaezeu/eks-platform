@@ -11,4 +11,9 @@ spec:
     solvers:
     - http01:
         ingress:
-          ingressClassName: nginx
+          ingressClassName: cilium #or nginx
+    - http01:
+        gatewayHTTPRoute:
+          parentRefs:
+            - name: shared-gateway
+              namespace: gateway
