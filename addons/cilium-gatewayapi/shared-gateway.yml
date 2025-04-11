@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: shared-gateway
+  namespace: gateway
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: prom-http
+      hostname: gateway-admin-prom.sctp-sandbox.com
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+    
+    - name: grafana-http
+      hostname: gateway-admin-grafana.sctp-sandbox.com
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
