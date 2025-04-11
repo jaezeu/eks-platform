@@ -41,7 +41,7 @@ module "eks" {
 
   eks_managed_node_groups = var.deploy_node_groups ? {
     learner_ng = {
-      ami_type       = "AL2023_x86_64_STANDARD"
+      ami_type       = "AL2023_ARM_64_STANDARD" # Update to AL2023_x86_64_STANDARD if using non-graviton instances
       instance_types = ["m6g.large"]
       min_size       = 3
       max_size       = 5
