@@ -27,7 +27,7 @@ module "eks" {
   bootstrap_self_managed_addons = true
 
   cluster_name    = "shared-eks-cluster"
-  cluster_version = "1.31"
+  cluster_version = "1.32"
 
   cluster_addons = local.cluster_addons
 
@@ -42,7 +42,7 @@ module "eks" {
   eks_managed_node_groups = var.deploy_node_groups ? {
     learner_ng = {
       ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["m5.large"]
+      instance_types = ["m6g.large"]
       min_size       = 3
       max_size       = 5
       desired_size   = 3
