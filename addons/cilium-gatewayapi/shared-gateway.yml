@@ -21,3 +21,27 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    
+    - name: prom-https
+      hostname: gateway-admin-prom.sctp-sandbox.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: admin-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    
+    - name: grafana-https
+      hostname: gateway-admin-grafana.sctp-sandbox.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: admin-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
