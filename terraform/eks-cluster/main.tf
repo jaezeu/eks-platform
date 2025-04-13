@@ -1,6 +1,6 @@
 locals {
   # Add more user groups if required to grant admin access since this is sandbox account
-  merged_users  = concat(data.aws_iam_group.ce8.users, data.aws_iam_group.instructor.users)
+  merged_users  = concat(data.aws_iam_group.ce9.users, data.aws_iam_group.instructor.users)
   user_arn_list = [for obj in local.merged_users : obj["arn"]]
 
   cluster_addons = merge(
