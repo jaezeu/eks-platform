@@ -21,6 +21,14 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+
+    # - name: argocd-http
+    #   hostname: gateway-admin-argocd.sctp-sandbox.com
+    #   port: 80
+    #   protocol: HTTP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
     
     - name: prom-https
       hostname: gateway-admin-prom.sctp-sandbox.com
@@ -45,3 +53,15 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+
+    # - name: argocd-https
+    #   hostname: gateway-admin-argocd.sctp-sandbox.com
+    #   port: 443
+    #   protocol: TLS
+    #   tls:
+    #     mode: Passthrough
+    #     certificateRefs:
+    #       - name: admin-tls-secret
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
