@@ -142,7 +142,7 @@ jobs:
             terraform apply -auto-approve cluster-with-nodegroups.out
           else
             echo "Deploying cluster with default networking"
-            terraform plan -var 'region=${{ inputs.region }}''
+            terraform plan -var 'region=${{ inputs.region }}'
             terraform apply -auto-approve
 
             export CLUSTER_NAME=$(terraform output -raw cluster_name)
