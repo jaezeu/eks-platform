@@ -75,7 +75,7 @@ jobs:
           terraform_wrapper: false
         
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -upgrade
         working-directory: ./terraform/eks-cluster
 
       - name: Deploy Cluster
