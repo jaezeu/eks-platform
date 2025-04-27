@@ -1,5 +1,8 @@
 global:
   domain: argocd-ce8.sctp-sandbox.com
+configs:
+  params: 
+    "server.insecure": true
 
 server:
   ingress:

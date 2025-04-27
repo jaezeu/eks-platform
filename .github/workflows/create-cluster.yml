@@ -43,6 +43,11 @@ on:
         description: "Deploy Loki?"
         default: false
         required: true
+      gateway:
+        type: boolean
+        description: "Deploy Gateway Resources?"
+        default: false
+        required: true
 
 permissions:
   id-token: write       # Required for OIDC
@@ -222,4 +227,10 @@ jobs:
           cd addons/loki
           chmod +x init.sh
           ./init.sh
+
+      - name: Deploy Gateway Resources
+        if: ${{ github.event.inputs.gateway == 'true' }}
+        run: |
+          cd addons
+          kubectl apply -f cilium-gatewayapi
 
