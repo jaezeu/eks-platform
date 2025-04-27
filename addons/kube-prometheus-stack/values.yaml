@@ -15,17 +15,17 @@ prometheus:
     #       - admin-prom.sctp-sandbox.com
 grafana:
   ingress:
-    enabled: false
-    # ingressClassName: nginx
-    # hosts:
-    #   - admin-grafana.sctp-sandbox.com
-    # annotations:
-    #   cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    #   external-dns.alpha.kubernetes.io/hostname: "admin-grafana.sctp-sandbox.com"
-    # tls:
-    #   - secretName: grafana-general-tls
-    #     hosts:
-    #       - admin-grafana.sctp-sandbox.com
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - admin-grafana.sctp-sandbox.com
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      external-dns.alpha.kubernetes.io/hostname: "admin-grafana.sctp-sandbox.com"
+    tls:
+      - secretName: grafana-general-tls
+        hosts:
+          - admin-grafana.sctp-sandbox.com
 prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
