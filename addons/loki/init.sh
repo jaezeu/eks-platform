@@ -11,5 +11,5 @@ helm repo update
 helm install --values values.yaml loki grafana/loki -n loki --create-namespace
 
 # 3. Install or upgrade promtail
-helm install promtail grafana/promtail --version 6.7.4
+helm install promtail grafana/promtail --version 6.7.4 -n loki
 
