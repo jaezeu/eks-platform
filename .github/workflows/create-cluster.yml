@@ -109,6 +109,7 @@ jobs:
             kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml
             kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml
             kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml
+            kubectl create namespace gateway
 
             echo "Adding Experimental Gateway API CRDs for TLSRoutes"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
@@ -233,4 +234,10 @@ jobs:
         run: |
           cd addons
           kubectl apply -f cilium-gatewayapi
+
+      - name: Deploy EBS CSI Driver Resources
+        if: ${{ github.event.inputs.ebs == 'true' }}
+        run: |
+          cd addons
+          kubectl apply -f ebs-csi-driver
 
