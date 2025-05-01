@@ -48,6 +48,11 @@ on:
         description: "Deploy Gateway Resources?"
         default: false
         required: true
+      ebs-csi:
+        type: boolean
+        description: "Deploy EBS CSI Resources?"
+        default: false
+        required: true
 
 permissions:
   id-token: write       # Required for OIDC
