@@ -132,7 +132,7 @@ jobs:
               --set routingMode=native \
               --set k8sServiceHost=$CLUSTER_ENDPOINT \
               --set k8sServicePort=443 \
-              --set kubeProxyReplacement=strict \
+              --set kubeProxyReplacement=true \
               --set gatewayAPI.enabled=true \
               --set hubble.relay.enabled=true \
               --set hubble.ui.enabled=true \
