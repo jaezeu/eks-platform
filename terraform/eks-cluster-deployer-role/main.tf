@@ -7,6 +7,6 @@ module "github-oidc" {
 
   role_name = "shared-eks-cluster-deployer-role"
 
-  repositories              = ["jaezeu/eks-demo"]
+  repositories              = ["jaezeu/eks-platform"]
   oidc_role_attach_policies = ["arn:aws:iam::aws:policy/AdministratorAccess"]
 }
