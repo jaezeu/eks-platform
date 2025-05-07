@@ -1,13 +1,18 @@
 # This workflow cleans up all helm charts deployed within the EKS cluster and destroys the cluster once done.
+# continue-on-error: true has been set for all steps to ensure that the workflow does not fail in the event of other cleanup jobs removing the cluster. This is so that terraform destroy can still be run to remove rouge resources.
 name: Cleanup
 
 on:
   workflow_dispatch:
     inputs:
       region:
+        type: choice
+        options:
+          - ap-southeast-1
+          - us-east-1
         description: "AWS region"
         required: true
-        default: "ap-southeast-1"
+        default: ap-southeast-1
 
 permissions:
   id-token: write       # Required for OIDC
@@ -41,14 +46,17 @@ jobs:
 
       - name: Export terraform outputs
         id: tfout
+        continue-on-error: true
         run: |
           echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
         working-directory: ./terraform/eks-cluster
 
       - name: Update kubeconfig
+        continue-on-error: true
         run: aws eks update-kubeconfig --name ${{ steps.tfout.outputs.CLUSTER_NAME }}
 
       - name: Uninstall all Helm releases except external-dns
+        continue-on-error: true
         run: |
           helm list -A -o json | jq -r '.[] | select(.name != "external-dns") | "\(.name) \(.namespace)"' | while read release ns; do
             echo "Uninstalling Helm release: $release in namespace: $ns"
@@ -59,12 +67,14 @@ jobs:
         run: sleep 60
 
       - name: Uninstall external-dns Helm release
+        continue-on-error: true
         run: |
           external_dns_namespace=$(helm list -A -o json | jq -r '.[] | select(.name == "external-dns") | "\(.namespace)"')
           echo "Uninstalling external-dns from namespace: $external_dns_namespace"
           helm uninstall external-dns -n "$external_dns_namespace" || true
           
       - name: Delete all remaining K8s resources
+        continue-on-error: true
         run: |
           kubectl delete all --all -A || true
 
