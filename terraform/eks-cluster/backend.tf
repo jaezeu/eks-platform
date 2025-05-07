@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "sctp-ce8-tfstate"
-    key    = "terraform-learner-cluster-ce8.tfstate" #Update accordingly
+    bucket = "sctp-core-tfstate"
+    key    = "shared-eks-cluster.tfstate" #Update accordingly
     region = "ap-southeast-1"
   }
 }
