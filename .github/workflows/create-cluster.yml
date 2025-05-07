@@ -5,9 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       region:
+        type: choice
+        options:
+          - ap-southeast-1
+          - us-east-1
         description: "AWS region"
         required: true
-        default: "ap-southeast-1"
+        default: ap-southeast-1
       cilium:
         type: boolean
         description: "Deploy Cilium? (Cilium Ingress & Gateway API)"

@@ -10,8 +10,8 @@ locals {
     var.deploy_cluster_addons ? {
       "coredns" = {}
       #"aws-ebs-csi-driver" = {
-       #service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
-       #}
+      #service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
+      #}
     } : {},
     var.enable_default_network_addons ? {
       "kube-proxy" = {}
@@ -24,7 +24,7 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  bootstrap_self_managed_addons = false
+  bootstrap_self_managed_addons = true
 
   cluster_name    = "shared-eks-cluster"
   cluster_version = "1.32"
