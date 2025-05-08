@@ -79,5 +79,5 @@ jobs:
           kubectl delete all --all -A || true
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var region=${{ inputs.region }}
+        run: terraform destroy -auto-approve
         working-directory: ./terraform/eks-cluster
