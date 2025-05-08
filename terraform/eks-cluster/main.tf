@@ -3,15 +3,15 @@ locals {
   merged_users  = concat(data.aws_iam_group.ce9.users, data.aws_iam_group.instructor.users)
   user_arn_list = [for obj in local.merged_users : obj["arn"]]
 
+  # For default or non-default networking, the eks-pod-identity-agent is always deployed.
+  # For default networking, all 4 addons are deployed as per the default variable values.
+  # For non-default networking using Cilium, only the eks-pod-identity-agent is deployed first, while the coreDNS is only deployed after cilium is bootstrapped as part of the workflow.
   cluster_addons = merge(
     {
       "eks-pod-identity-agent" = {}
     },
     var.deploy_cluster_addons ? {
       "coredns" = {}
-      #"aws-ebs-csi-driver" = {
-      #service_account_role_arn = try(module.ebs_csi_driver_role[0].iam_role_arn, null)
-      #}
     } : {},
     var.enable_default_network_addons ? {
       "kube-proxy" = {}

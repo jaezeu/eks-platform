@@ -1,8 +1,3 @@
-variable "region" {
-  description = "The AWS region to deploy the EKS cluster"
-  type        = string
-  # default     = "ap-southeast-1"
-}
 # Set to true if you're making use of ExternalDNS with Route53
 variable "enable_external_dns" {
   type    = bool
@@ -23,7 +18,6 @@ variable "enable_ebs_csi_driver_role" {
 
 
 ########## Cilium Variables ###########
-
 variable "deploy_node_groups" {
   description = "Set to true to deploy node groups"
   type        = bool
@@ -31,7 +25,7 @@ variable "deploy_node_groups" {
 }
 
 variable "enable_default_network_addons" {
-  description = "Set to true to enable default network addons"
+  description = "Set to true for default network addons (kube-proxy and vpc-cni). For non-default network addons, set to false and use Cilium"
   type        = bool
   default     = true
 }
