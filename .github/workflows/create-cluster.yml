@@ -246,7 +246,7 @@ jobs:
           kubectl apply -f cilium-gatewayapi
 
       - name: Deploy EBS CSI Driver Resources
-        if: ${{ github.event.inputs.ebs == 'true' }}
+        if: ${{ github.event.inputs.ebs-csi == 'true' }}
         run: |
           cd addons
           kubectl apply -f ebs-csi-driver
