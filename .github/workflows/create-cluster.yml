@@ -178,6 +178,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup helmfile
+        uses: mamezou-tech/setup-helmfile@v2.1.0
+        with:
+          helmfile-version: "v1.0.0"
+          install-kubectl: no # Runner comes with kubectl pre-installed
+          install-helm: no  # Runner comes with helm pre-installed
+          install-helm-plugins: no #This is to prevent downloading the default helm-s3 plugin managed by this action.
+          additional-helm-plugins: https://github.com/databus23/helm-diff --version 3.11.0
+
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
