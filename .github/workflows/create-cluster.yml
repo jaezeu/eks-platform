@@ -170,7 +170,7 @@ jobs:
           echo "EXTERNAL_DNS_ROLE_ARN=$EXTERNAL_DNS_ROLE_ARN" >> $GITHUB_OUTPUT
         working-directory: ./terraform/eks-cluster
 
-  bootstrap:
+  ingress:
     runs-on: ubuntu-latest
     needs: [deploy]
 
@@ -189,10 +189,27 @@ jobs:
 
       - name: Deploy Nginx Ingress Controller
         if: ${{ github.event.inputs.nginx-ingress == 'true' }}
+        working-directory: ./addons/nginx-ingress
         run: |
-          cd addons/nginx-ingress
           chmod +x init.sh
           ./init.sh
+
+  external-dns:
+    runs-on: ubuntu-latest
+    needs: [ingress]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
       - name: Deploy ExternalDNS for Route53
         if: ${{ github.event.inputs.external-dns == 'true' }}
@@ -200,54 +217,155 @@ jobs:
           REGION: ${{ github.event.inputs.region }}
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
           CLUSTER_NAME: ${{ needs.deploy.outputs.cluster_name }}
+        working-directory: ./addons/r53-externaldns
         run: |
-          cd addons/r53-externaldns
           envsubst < values.yaml > updated-values.yaml
           mv updated-values.yaml values.yaml
           chmod +x init.sh
           ./init.sh
 
+  cert-manager:
+    runs-on: ubuntu-latest
+    needs: [external-dns]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
+
       - name: Deploy Cert Manager
         if: ${{ github.event.inputs.cert-manager == 'true' }}
         env:
           EMAIL: ${{ secrets.EMAIL_ADDRESS }}
+        working-directory: ./addons/cert-manager
         run: |
-          cd addons/cert-manager
           chmod +x init.sh
           ./init.sh
           
           envsubst < cluster-issuer.yaml | kubectl apply -f -
 
+  argocd:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
+
       - name: Deploy ArgoCD
         if: ${{ github.event.inputs.argocd == 'true' }}
+        working-directory: ./addons/argocd
         run: |
-          cd addons/argocd
           chmod +x init.sh
           ./init.sh
+
+  monitoring:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
       - name: Deploy Prometheus and Grafana
         if: ${{ github.event.inputs.monitoring == 'true' }}
+        working-directory: ./addons/kube-prometheus-stack
         run: |
-          cd addons/kube-prometheus-stack
           chmod +x init.sh
           ./init.sh
+
+  logging:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
       - name: Deploy Loki
         if: ${{ github.event.inputs.logging == 'true' }}
+        working-directory: ./addons/loki
         run: |
-          cd addons/loki
           chmod +x init.sh
           ./init.sh
 
+  cilium-gateway-api:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
+
       - name: Deploy Gateway Resources
         if: ${{ github.event.inputs.gateway == 'true' }}
+        working-directory: ./addons/cilium-gatewayapi
         run: |
-          cd addons
-          kubectl apply -f cilium-gatewayapi
+          kubectl apply -f .
+
+  ebs-csi-driver:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
       - name: Deploy EBS CSI Driver Resources
         if: ${{ github.event.inputs.ebs-csi == 'true' }}
+        working-directory: ./addons/ebs-csi-driver
         run: |
-          cd addons
-          kubectl apply -f ebs-csi-driver
-
+          kubectl apply -f .
