@@ -171,12 +171,12 @@ jobs:
       - name: Deploy Gateway Resources
         if: ${{ github.event.inputs.gateway == 'true' }}
         run: |
-          cd addons
-          kubectl apply -f cilium-gatewayapi
+          cd addons/cilium-gatewayapi
+          kubectl apply -f .
 
       - name: Deploy EBS CSI Driver Resources
-        if: ${{ github.event.inputs.ebs == 'true' }}
+        if: ${{ github.event.inputs.ebs-csi == 'true' }}
         run: |
-          cd addons
-          kubectl apply -f ebs-csi-driver
+          cd addons/ebs-csi-driver
+          kubectl apply -f .
 
