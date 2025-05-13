@@ -18,6 +18,7 @@ locals {
       "vpc-cni"    = {}
     } : {}
   )
+  name_prefix    = var.enable_default_network_addons ? "shared" : "cilium"  # So that the default cluster name remains the same as shared-eks-cluster.
 }
 
 module "eks" {
@@ -26,7 +27,7 @@ module "eks" {
 
   bootstrap_self_managed_addons = true
 
-  cluster_name    = "shared-eks-cluster"
+  cluster_name    = "${local.name_prefix}-eks-cluster"
   cluster_version = "1.32"
 
   cluster_addons = local.cluster_addons
@@ -68,7 +69,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.8.1"
 
-  name                    = "shared_eks_vpc"
+  name                    = "${local.name_prefix}-eks-vpc"
   cidr                    = "172.31.0.0/16"
   azs                     = data.aws_availability_zones.available.names
   public_subnets          = ["172.31.101.0/24", "172.31.102.0/24"]

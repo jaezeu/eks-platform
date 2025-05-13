@@ -13,6 +13,14 @@ on:
         description: "AWS region"
         required: true
         default: ap-southeast-1
+      cluster_type:
+        type: choice
+        options:
+          - cilium-cluster
+          - standard-cluster
+        description: "Cluster Networking Type"
+        required: true
+        default: standard-cluster
 
 permissions:
   id-token: write       # Required for OIDC
@@ -42,6 +50,11 @@ jobs:
         
       - name: Terraform Init
         run: terraform init
+        working-directory: ./terraform/eks-cluster
+
+      - name: Terraform Workspace Select
+        run: |
+          terraform workspace select ${{ github.event.inputs.cluster_type }}
         working-directory: ./terraform/eks-cluster
 
       - name: Export terraform outputs

@@ -12,16 +12,6 @@ on:
         description: "AWS region"
         required: true
         default: ap-southeast-1
-      cilium:
-        type: boolean
-        description: "Deploy Cilium? (Cilium Ingress & Gateway API)"
-        default: false
-        required: true
-      nginx-ingress:
-        type: boolean
-        description: "Deploy Nginx Ingress Controller?"
-        default: false
-        required: true
       external-dns:
         type: boolean
         description: "Deploy ExternalDNS?"
@@ -64,6 +54,7 @@ permissions:
 
 env:
   OIDC_ROLE: arn:aws:iam::255945442255:role/shared-eks-cluster-deployer-role
+  CLUSTER_TYPE: cilium-cluster # Setting it to this value since its a shared state bucket. Just for ease of identification if anyone else goes in to see.
 
 jobs:
   deploy:
@@ -92,80 +83,74 @@ jobs:
         run: terraform init
         working-directory: ./terraform/eks-cluster
 
+      - name: Terraform Workspace Setup
+        run: |
+          terraform workspace select ${{ env.CLUSTER_TYPE }} || terraform workspace new ${{ env.CLUSTER_TYPE }}
+          terraform workspace list
+        working-directory: ./terraform/eks-cluster
+
       - name: Deploy Cluster
         id: deploy_steps
         run: |
-          if [ "${{ github.event.inputs.cilium }}" == "true" ]; then
-            echo "Deploying cluster with Cilium Networking"
+          echo "Creating cluster with no node group"
+          terraform plan -var-file=vars/cilium-wo-nodegroup.tfvars -out=cilium-cluster-wo-nodegroups.out
+          terraform apply -auto-approve cilium-cluster-wo-nodegroups.out
 
-            echo "Creating cluster with no node group"
-            terraform plan -var-file=vars/cilium-wo-nodegroup.tfvars -out=cluster-wo-nodegroups.out
-            terraform apply -auto-approve cluster-wo-nodegroups.out
+          export CLUSTER_NAME=$(terraform output -raw cluster_name)
+          export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
+          export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
 
-            export CLUSTER_NAME=$(terraform output -raw cluster_name)
-            export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
-            export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
+          aws eks update-kubeconfig --name "$CLUSTER_NAME"
 
-            aws eks update-kubeconfig --name "$CLUSTER_NAME"
+          echo "Adding Gateway API CRDs"
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gateways.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml
 
-            echo "Adding Gateway API CRDs"
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gateways.yaml
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml
+          echo "Adding Experimental Gateway API CRDs for TLSRoutes"
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
 
-            echo "Adding Experimental Gateway API CRDs for TLSRoutes"
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+          echo "Enabling Prefix Delegation on VPC CNI"
+          kubectl set env daemonset aws-node -n kube-system ENABLE_PREFIX_DELEGATION=true || true
 
-            echo "Enabling Prefix Delegation on VPC CNI"
-            kubectl set env daemonset aws-node -n kube-system ENABLE_PREFIX_DELEGATION=true || true
+          helm repo add cilium https://helm.cilium.io/
+          helm repo update
+          helm upgrade --install cilium cilium/cilium --version 1.16.7 \
+            --namespace kube-system \
+            --set eni.enabled=true \
+            --set ipam.mode=eni \
+            --set egressMasqueradeInterfaces=eth0 \
+            --set routingMode=native \
+            --set k8sServiceHost=$CLUSTER_ENDPOINT \
+            --set k8sServicePort=443 \
+            --set kubeProxyReplacement=true \
+            --set gatewayAPI.enabled=true \
+            --set hubble.relay.enabled=true \
+            --set hubble.ui.enabled=true \
+            --set eni.awsEnablePrefixDelegation=true \
+            --set hubble.enabled=true \
+            --set hubble.tls.auto.enabled=true \
+            --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}" \
+            --set hubble.relay.enabled=true \
+            --set hubble.ui.enabled=true \
+            --set encryption.enabled=false \
+            --set encryption.nodeEncryption=false \
+            --set routingMode=native \
+            --set ipv4NativeRoutingCIDR="0.0.0.0/0" \
+            --set bpf.masquerade=false \
+            --set autoDirectNodeRoutes=true \
+            --set hostLegacyRouting=false 
 
-            helm repo add cilium https://helm.cilium.io/
-            helm repo update
-            helm upgrade --install cilium cilium/cilium --version 1.16.7 \
-              --namespace kube-system \
-              --set eni.enabled=true \
-              --set ipam.mode=eni \
-              --set egressMasqueradeInterfaces=eth0 \
-              --set routingMode=native \
-              --set k8sServiceHost=$CLUSTER_ENDPOINT \
-              --set k8sServicePort=443 \
-              --set kubeProxyReplacement=true \
-              --set gatewayAPI.enabled=true \
-              --set hubble.relay.enabled=true \
-              --set hubble.ui.enabled=true \
-              --set eni.awsEnablePrefixDelegation=true \
-              --set hubble.enabled=true \
-              --set hubble.tls.auto.enabled=true \
-              --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}" \
-              --set hubble.relay.enabled=true \
-              --set hubble.ui.enabled=true \
-              --set encryption.enabled=false \
-              --set encryption.nodeEncryption=false \
-              --set routingMode=native \
-              --set ipv4NativeRoutingCIDR="0.0.0.0/0" \
-              --set bpf.masquerade=false \
-              --set autoDirectNodeRoutes=true \
-              --set hostLegacyRouting=false 
+          echo "Removing kubeproxy & VPC CNI daemon sets if exists"
+          kubectl delete ds kube-proxy -n kube-system --ignore-not-found=true
+          kubectl delete ds aws-node -n kube-system --ignore-not-found=true
 
-            echo "Removing kubeproxy & VPC CNI daemon sets if exists"
-            kubectl delete ds kube-proxy -n kube-system --ignore-not-found=true
-            kubectl delete ds aws-node -n kube-system --ignore-not-found=true
+          echo "Creating cluster with node group"
+          terraform plan -var-file=vars/cilium-with-nodegroup.tfvars -out cilium-cluster-with-nodegroups.out
+          terraform apply -auto-approve cilium-cluster-with-nodegroups.out
 
-            echo "Creating cluster with node group"
-            terraform plan -var-file=vars/cilium-with-nodegroup.tfvars -out cluster-with-nodegroups.out
-            terraform apply -auto-approve cluster-with-nodegroups.out
-          else
-            echo "Deploying cluster with default networking"
-            terraform plan -out cluster-default-networking.out
-            terraform apply -auto-approve cluster-default-networking.out
-
-            export CLUSTER_NAME=$(terraform output -raw cluster_name)
-            export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
-          fi
-
-          # Write outputs to a file to be read by subsequent steps
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_OUTPUT
           echo "EXTERNAL_DNS_ROLE_ARN=$EXTERNAL_DNS_ROLE_ARN" >> $GITHUB_OUTPUT
         working-directory: ./terraform/eks-cluster
