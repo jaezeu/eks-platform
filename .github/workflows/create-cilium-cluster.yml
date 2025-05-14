@@ -1,0 +1,231 @@
+# This workflow creates the EKS cluster and deploy the addons as specified in the inputs
+name: Cluster Creation & Helm Bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        type: choice
+        options:
+          - ap-southeast-1
+          - us-east-1
+        description: "AWS region"
+        required: true
+        default: ap-southeast-1
+      external-dns:
+        type: boolean
+        description: "Deploy ExternalDNS?"
+        default: false
+        required: true
+      cert-manager:
+        type: boolean
+        description: "Deploy CertManager?"
+        default: false
+        required: true
+      argocd:
+        type: boolean
+        description: "Deploy ArgoCD?"
+        default: false
+        required: true
+      monitoring:
+        type: boolean
+        description: "Deploy Prometheus and Grafana?"
+        default: false
+        required: true
+      logging:
+        type: boolean
+        description: "Deploy Loki?"
+        default: false
+        required: true
+      gateway:
+        type: boolean
+        description: "Deploy Gateway Resources?"
+        default: false
+        required: true
+      ebs-csi:
+        type: boolean
+        description: "Deploy EBS CSI Resources?"
+        default: false
+        required: true
+
+permissions:
+  id-token: write       # Required for OIDC
+  contents: read        # To read repo content
+
+env:
+  OIDC_ROLE: arn:aws:iam::255945442255:role/shared-eks-cluster-deployer-role
+  CLUSTER_TYPE: cilium-cluster # Setting it to this value since its a shared state bucket. Just for ease of identification if anyone else goes in to see.
+
+jobs:
+  deploy:
+    name: Create Cluster
+    runs-on: ubuntu-latest
+    outputs:
+      cluster_name: ${{ steps.deploy_steps.outputs.CLUSTER_NAME }}
+      external_dns_role_arn: ${{ steps.deploy_steps.outputs.EXTERNAL_DNS_ROLE_ARN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+        
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform/eks-cluster
+
+      - name: Terraform Workspace Setup
+        run: |
+          terraform workspace select ${{ env.CLUSTER_TYPE }} || terraform workspace new ${{ env.CLUSTER_TYPE }}
+          terraform workspace list
+        working-directory: ./terraform/eks-cluster
+
+      - name: Deploy Cluster
+        id: deploy_steps
+        run: |
+          echo "Creating cluster with no node group"
+          terraform plan -var-file=vars/cilium-wo-nodegroup.tfvars -out=cilium-cluster-wo-nodegroups.out
+          terraform apply -auto-approve cilium-cluster-wo-nodegroups.out
+
+          export CLUSTER_NAME=$(terraform output -raw cluster_name)
+          export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
+          export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
+
+          aws eks update-kubeconfig --name "$CLUSTER_NAME"
+
+          echo "Adding Gateway API CRDs"
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gateways.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml
+
+          echo "Adding Experimental Gateway API CRDs for TLSRoutes"
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+
+          echo "Enabling Prefix Delegation on VPC CNI"
+          kubectl set env daemonset aws-node -n kube-system ENABLE_PREFIX_DELEGATION=true || true
+
+          helm repo add cilium https://helm.cilium.io/
+          helm repo update
+          helm upgrade --install cilium cilium/cilium --version 1.16.7 \
+            --namespace kube-system \
+            --set eni.enabled=true \
+            --set ipam.mode=eni \
+            --set egressMasqueradeInterfaces=eth0 \
+            --set routingMode=native \
+            --set k8sServiceHost=$CLUSTER_ENDPOINT \
+            --set k8sServicePort=443 \
+            --set kubeProxyReplacement=true \
+            --set gatewayAPI.enabled=true \
+            --set hubble.relay.enabled=true \
+            --set hubble.ui.enabled=true \
+            --set eni.awsEnablePrefixDelegation=true \
+            --set hubble.enabled=true \
+            --set hubble.tls.auto.enabled=true \
+            --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}" \
+            --set hubble.relay.enabled=true \
+            --set hubble.ui.enabled=true \
+            --set encryption.enabled=false \
+            --set encryption.nodeEncryption=false \
+            --set routingMode=native \
+            --set ipv4NativeRoutingCIDR="0.0.0.0/0" \
+            --set bpf.masquerade=false \
+            --set autoDirectNodeRoutes=true \
+            --set hostLegacyRouting=false 
+
+          echo "Removing kubeproxy & VPC CNI daemon sets if exists"
+          kubectl delete ds kube-proxy -n kube-system --ignore-not-found=true
+          kubectl delete ds aws-node -n kube-system --ignore-not-found=true
+
+          echo "Creating cluster with node group"
+          terraform plan -var-file=vars/cilium-with-nodegroup.tfvars -out cilium-cluster-with-nodegroups.out
+          terraform apply -auto-approve cilium-cluster-with-nodegroups.out
+
+          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_OUTPUT
+          echo "EXTERNAL_DNS_ROLE_ARN=$EXTERNAL_DNS_ROLE_ARN" >> $GITHUB_OUTPUT
+        working-directory: ./terraform/eks-cluster
+
+  bootstrap:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+      
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
+
+      - name: Deploy ExternalDNS for Route53
+        if: ${{ github.event.inputs.external-dns == 'true' }}
+        env:
+          REGION: ${{ github.event.inputs.region }}
+          EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
+          CLUSTER_NAME: ${{ needs.deploy.outputs.cluster_name }}
+        run: |
+          cd addons/r53-externaldns
+          envsubst < values.yaml > updated-values.yaml
+          mv updated-values.yaml values.yaml
+          chmod +x init.sh
+          ./init.sh
+
+      - name: Deploy Cert Manager
+        if: ${{ github.event.inputs.cert-manager == 'true' }}
+        env:
+          EMAIL: ${{ secrets.EMAIL_ADDRESS }}
+        run: |
+          cd addons/cert-manager
+          chmod +x init.sh
+          ./init.sh
+          
+          envsubst < cluster-issuer.yaml | kubectl apply -f -
+
+      - name: Deploy ArgoCD
+        if: ${{ github.event.inputs.argocd == 'true' }}
+        run: |
+          cd addons/argocd
+          chmod +x init.sh
+          ./init.sh
+
+      - name: Deploy Prometheus and Grafana
+        if: ${{ github.event.inputs.monitoring == 'true' }}
+        run: |
+          cd addons/kube-prometheus-stack
+          chmod +x init.sh
+          ./init.sh
+
+      - name: Deploy Loki
+        if: ${{ github.event.inputs.logging == 'true' }}
+        run: |
+          cd addons/loki
+          chmod +x init.sh
+          ./init.sh
+
+      - name: Deploy Gateway Resources
+        if: ${{ github.event.inputs.gateway == 'true' }}
+        run: |
+          cd addons/cilium-gatewayapi
+          kubectl apply -f .
+
+      - name: Deploy EBS CSI Driver Resources
+        if: ${{ github.event.inputs.ebs-csi == 'true' }}
+        run: |
+          cd addons/ebs-csi-driver
+          kubectl apply -f .
+
