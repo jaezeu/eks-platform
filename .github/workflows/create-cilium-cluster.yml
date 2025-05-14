@@ -172,13 +172,6 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
-      - name: Deploy Nginx Ingress Controller
-        if: ${{ github.event.inputs.nginx-ingress == 'true' }}
-        run: |
-          cd addons/nginx-ingress
-          chmod +x init.sh
-          ./init.sh
-
       - name: Deploy ExternalDNS for Route53
         if: ${{ github.event.inputs.external-dns == 'true' }}
         env:
