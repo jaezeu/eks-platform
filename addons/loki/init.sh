@@ -8,8 +8,8 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 
 # 2. Install or upgrade loki
-helm install --values values.yaml loki grafana/loki -n loki --create-namespace
+helm upgrade --install loki grafana/loki --values values.yaml -n loki --create-namespace
 
 # 3. Install or upgrade promtail
-helm install promtail grafana/promtail --version 6.7.4 -n loki
+helm upgrade --install promtail grafana/promtail --version 6.7.4 -n loki
 
