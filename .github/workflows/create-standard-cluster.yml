@@ -1,5 +1,5 @@
 # This workflow creates the EKS cluster and deploy the addons as specified in the inputs
-name: Cluster Creation & Helm Bootstrap
+name: VPC CNI Cluster Creation & Bootstrap
 
 on:
   workflow_dispatch:
