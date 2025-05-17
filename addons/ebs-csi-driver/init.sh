@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # 1. Add Helm repositories
-helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/shared-cluster-ebs-csidriver-role
 
 # Update repos to ensure we have the latest charts
 helm repo update
