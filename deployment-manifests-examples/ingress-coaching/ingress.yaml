@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaz-echo-app-ingress
+  namespace: jaz-eks-activity
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "jaz-echoapp.sctp-sandbox.com" # Route53
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Cert-Manager
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - "jaz-echoapp.sctp-sandbox.com" # Route53 Record
+      secretName: jaz-echoapp-tls
+  rules:
+  - host: "jaz-echoapp.sctp-sandbox.com" # Route53 Record
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jaz-echo-service
+            port:
+              number: 80
