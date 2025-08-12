@@ -41,7 +41,7 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_groups = var.deploy_node_groups ? {
-    learner_ng = {
+    "${local.name_prefix}-learner_ng" = {
       ami_type       = "AL2023_ARM_64_STANDARD" # Update to AL2023_x86_64_STANDARD if using non-graviton instances
       instance_types = ["m6g.large"]
       min_size       = 3
