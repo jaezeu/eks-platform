@@ -15,6 +15,7 @@ spec:
         - ingress-nginx
         - cert-manager
         - external-dns
+        - argocd
     preconditions:
       all:
       - key: "{{ request.operation }}"
