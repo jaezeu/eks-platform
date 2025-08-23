@@ -42,6 +42,11 @@ on:
         description: "Deploy Gateway Resources?"
         default: false
         required: true
+      tetragon:
+        type: boolean
+        description: "Deploy Tetragon?"
+        default: false
+        required: true
       ebs-csi:
         type: boolean
         description: "Deploy EBS CSI Resources?"
@@ -222,8 +227,15 @@ jobs:
       - name: Deploy Gateway Resources
         if: ${{ github.event.inputs.gateway == 'true' }}
         run: |
-          cd addons/cilium-gatewayapi
+          cd addons/cilium/gateway
           kubectl apply -f .
+      
+      - name: Deploy Tetragon
+        if: ${{ github.event.inputs.tetragon == 'true' }}
+        run: |
+          cd addons/cilium/tetragon
+          chmod +x init.sh
+          ./init.sh
 
       - name: Deploy EBS CSI Driver Resources
         if: ${{ github.event.inputs.ebs-csi == 'true' }}
