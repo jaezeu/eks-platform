@@ -1,6 +1,6 @@
 locals {
   # Add more user groups if required to grant admin access since this is sandbox account
-  merged_users  = concat(data.aws_iam_group.ce10.users, data.aws_iam_group.instructor.users)
+  merged_users  = concat(data.aws_iam_group.ce11.users, data.aws_iam_group.instructor.users)
   user_arn_list = [for obj in local.merged_users : obj["arn"]]
 
   # For default or non-default networking, the eks-pod-identity-agent is always deployed.
@@ -86,3 +86,4 @@ module "vpc" {
     "kubernetes.io/role/internal-elb" = 1
   }
 }
+
