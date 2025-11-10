@@ -1,6 +1,6 @@
 # Add more user groups if required to grant admin access since this is sandbox account
-data "aws_iam_group" "ce10" {
-  group_name = "sctp-ce-10-learner"
+data "aws_iam_group" "ce11" {
+  group_name = "sctp-ce-11-learner"
 }
 
 data "aws_iam_group" "instructor" {
@@ -12,3 +12,4 @@ data "aws_availability_zones" "available" {
 }
 
 data "aws_caller_identity" "current" {}
+
