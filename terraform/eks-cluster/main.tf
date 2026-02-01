@@ -28,7 +28,7 @@ module "eks" {
   bootstrap_self_managed_addons = true
 
   cluster_name    = "${local.name_prefix}-eks-cluster"
-  cluster_version = "1.33"
+  cluster_version = "1.35"
 
   cluster_addons = local.cluster_addons
 
@@ -86,4 +86,5 @@ module "vpc" {
     "kubernetes.io/role/internal-elb" = 1
   }
 }
+
 
