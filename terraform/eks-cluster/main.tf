@@ -1,6 +1,6 @@
 locals {
   # Add more user groups if required to grant admin access since this is sandbox account
-  merged_users  = concat(data.aws_iam_group.ce11.users, data.aws_iam_group.instructor.users)
+  merged_users  = concat(data.aws_iam_group.ce12.users, data.aws_iam_group.instructor.users)
   user_arn_list = [for obj in local.merged_users : obj["arn"]]
 
   # For default or non-default networking, the eks-pod-identity-agent is always deployed.
@@ -18,21 +18,21 @@ locals {
       "vpc-cni"    = {}
     } : {}
   )
-  name_prefix    = var.enable_default_network_addons ? "shared" : "cilium"  # So that the default cluster name remains the same as shared-eks-cluster.
+  name_prefix = var.enable_default_network_addons ? "shared" : "cilium" # So that the default cluster name remains the same as shared-eks-cluster.
 }
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "~> 21.15.1"
 
   bootstrap_self_managed_addons = true
 
-  cluster_name    = "${local.name_prefix}-eks-cluster"
-  cluster_version = "1.35"
+  name               = "${local.name_prefix}-eks-cluster"
+  kubernetes_version = "1.35"
 
-  cluster_addons = local.cluster_addons
+  addons = local.cluster_addons
 
-  cluster_endpoint_public_access           = true
+  endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
 
   enable_irsa = true
@@ -67,7 +67,7 @@ module "eks" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.8.1"
+  version = "~> 6.6.0"
 
   name                    = "${local.name_prefix}-eks-vpc"
   cidr                    = "172.31.0.0/16"

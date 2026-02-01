@@ -115,9 +115,9 @@ module "loki_s3_role" {
       ]
       effect = "Allow"
       resources = [
-        "${aws_s3_bucket.loki_chunks[0].arn}",
+        aws_s3_bucket.loki_chunks[0].arn,
         "${aws_s3_bucket.loki_chunks[0].arn}/*",
-        "${aws_s3_bucket.loki_ruler[0].arn}",
+        aws_s3_bucket.loki_ruler[0].arn,
         "${aws_s3_bucket.loki_ruler[0].arn}/*"
       ]
     }

@@ -1,19 +1,22 @@
 # Set to true if you're making use of ExternalDNS with Route53
 variable "enable_external_dns" {
-  type    = bool
-  default = true
+  description = "Set to true to create IAM role and policies for ExternalDNS with Route53"
+  type        = bool
+  default     = true
 }
 
 # Set to true if you're making use of Loki with a s3 backend
 variable "enable_loki_s3" {
-  type    = bool
-  default = true
+  description = "Set to true to create IAM role and policies for Loki with a s3 backend"
+  type        = bool
+  default     = true
 }
 
 # Set to true if you're making use of a PersistentVolume with EBS CSI Driver Add-ons
 variable "enable_ebs_csi_driver_role" {
-  type    = bool
-  default = true
+  description = "Set to true to create IAM role and policies for PersistentVolume with EBS CSI Driver Add-ons"
+  type        = bool
+  default     = true
 }
 
 
