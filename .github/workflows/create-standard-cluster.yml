@@ -53,7 +53,8 @@ permissions:
   contents: read        # To read repo content
 
 env:
-  OIDC_ROLE: arn:aws:iam::255945442255:role/shared-eks-cluster-deployer-role
+  ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
+  OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/shared-eks-cluster-deployer-role
   CLUSTER_TYPE: standard-cluster # Setting it to this value since its a shared state bucket. Just for ease of identification if anyone else goes in to see.
 
 jobs:
