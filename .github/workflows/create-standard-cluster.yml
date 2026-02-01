@@ -90,14 +90,22 @@ jobs:
           terraform workspace list
         working-directory: ./terraform/eks-cluster
 
-      - name: Deploy Cluster
+      - name: Deploy Cluster without Node Groups
         id: deploy_steps
         run: |
-          terraform plan -out default-networking-cluster.out
-          terraform apply -auto-approve default-networking-cluster.out
+          echo "Creating cluster with no node group"
+          terraform plan -var-file=vars/standard-wo-nodegroup.tfvars -out=standard-cluster-wo-nodegroups.out
+          terraform apply -auto-approve standard-cluster-wo-nodegroups.out
 
           echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
+        working-directory: ./terraform/eks-cluster
+
+      - name: Deploy Cluster with Node Groups
+        id: deploy_nodes
+        run: |
+          terraform plan -out standard-cluster-with-nodegroups.out
+          terraform apply -auto-approve standard-cluster-with-nodegroups.out
         working-directory: ./terraform/eks-cluster
 
   bootstrap:
