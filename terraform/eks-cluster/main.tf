@@ -18,7 +18,7 @@ locals {
       "vpc-cni"    = {}
     } : {}
   )
-  name_prefix    = var.enable_default_network_addons ? "shared" : "cilium"  # So that the default cluster name remains the same as shared-eks-cluster.
+  name_prefix = var.enable_default_network_addons ? "shared" : "cilium" # So that the default cluster name remains the same as shared-eks-cluster.
 }
 
 module "eks" {
