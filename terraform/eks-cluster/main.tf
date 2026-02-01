@@ -25,8 +25,6 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.15.1"
 
-  bootstrap_self_managed_addons = true
-
   name               = "${local.name_prefix}-eks-cluster"
   kubernetes_version = "1.35"
 
