@@ -42,10 +42,6 @@ Thank you for your interest in contributing to this project! We welcome contribu
 - Update documentation for any new features or changes.
 - Respect the project's [LICENSE](LICENSE).
 
-## Code of Conduct
-
-Please be respectful and considerate in all interactions. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) if available.
-
 ## Need Help?
 
 If you have questions, open an issue or start a discussion in the repository.

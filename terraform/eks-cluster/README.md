@@ -30,21 +30,8 @@ variable "enable_ebs_csi_driver_role" {
 
 All of the related IRSA resources are stored in ```irsa.tf``
 
-## For Cilium Setup Only
+Select one of the available `.tfvars` files based on your needs:
 
-If you're looking to create a kube proxy free eks cluster, you may do the following:
-
-1) Comment out the node groups first as cilium has to be installed for the node groups to turn healthy
-2) comment out node group > tf apply > axe it halfways since coredns pods dont turn healthy > install cilium > tf apply
-
-```bash
-helm install cilium cilium/cilium --version 1.16.7 \
-  --namespace kube-system \
-  --set eni.enabled=true \
-  --set ipam.mode=eni \
-  --set egressMasqueradeInterfaces=eth0 \
-  --set routingMode=native \
-  --set k8sServiceHost=7505637818EB91FC48302ED9CB5BA64D.gr7.ap-southeast-1.eks.amazonaws.com \
-  --set k8sServicePort=443 \
-  --set kubeProxyReplacement=true
-```
+- `standard-wo-nodegroup.tfvars` - Standard EKS without initial node groups
+- `cilium-wo-nodegroup.tfvars` - Cilium setup without node groups (install Cilium first)
+- `cilium-with-nodegroup.tfvars` - Cilium setup with node groups (after Cilium is installed)
