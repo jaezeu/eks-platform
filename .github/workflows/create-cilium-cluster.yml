@@ -147,10 +147,7 @@ jobs:
             --set ipv4NativeRoutingCIDR="0.0.0.0/0" \
             --set bpf.masquerade=false \
             --set autoDirectNodeRoutes=true \
-            --set hostLegacyRouting=false \
-            --set authentication.enabled=true \
-            --set authentication.mutual.spire.enabled=true \
-            --set authentication.mutual.spire.install.enabled=true
+            --set hostLegacyRouting=false
 
           echo "Removing kubeproxy & VPC CNI daemon sets if exists"
           kubectl delete ds kube-proxy -n kube-system --ignore-not-found=true
