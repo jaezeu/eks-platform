@@ -123,7 +123,7 @@ jobs:
 
           helm repo add cilium https://helm.cilium.io/
           helm repo update
-          helm upgrade --install cilium cilium/cilium --version 1.18.1 \
+          helm upgrade --install cilium cilium/cilium --version 1.19.2 \
             --namespace kube-system \
             --set eni.enabled=true \
             --set ipam.mode=eni \
