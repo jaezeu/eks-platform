@@ -37,11 +37,6 @@ on:
         description: "Deploy Loki?"
         default: false
         required: true
-      gateway:
-        type: boolean
-        description: "Deploy Gateway Resources?"
-        default: false
-        required: true
       tetragon:
         type: boolean
         description: "Deploy Tetragon?"
@@ -142,11 +137,8 @@ jobs:
             --set hubble.enabled=true \
             --set hubble.tls.auto.enabled=true \
             --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}" \
-            --set hubble.relay.enabled=true \
-            --set hubble.ui.enabled=true \
             --set encryption.enabled=false \
             --set encryption.nodeEncryption=false \
-            --set routingMode=native \
             --set ipv4NativeRoutingCIDR="0.0.0.0/0" \
             --set bpf.masquerade=false \
             --set autoDirectNodeRoutes=true \

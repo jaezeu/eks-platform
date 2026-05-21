@@ -76,7 +76,7 @@ jobs:
           aws-region: ${{ inputs.region }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
         
@@ -176,12 +176,6 @@ jobs:
           cd addons/loki
           chmod +x init.sh
           ./init.sh
-
-      - name: Deploy Gateway Resources
-        if: ${{ github.event.inputs.gateway == 'true' }}
-        run: |
-          cd addons/cilium-gatewayapi
-          kubectl apply -f .
 
       - name: Deploy EBS CSI Driver Resources
         if: ${{ github.event.inputs.ebs-csi == 'true' }}
