@@ -90,22 +90,14 @@ jobs:
           terraform workspace list
         working-directory: ./terraform/eks-cluster
 
-      - name: Deploy Cluster without Node Groups
+      - name: Deploy Cluster and Extract Outputs
         id: deploy_steps
         run: |
-          echo "Creating cluster with no node group"
-          terraform plan -var-file=vars/standard-wo-nodegroup.tfvars -out=standard-cluster-wo-nodegroups.out
-          terraform apply -auto-approve standard-cluster-wo-nodegroups.out
+          terraform plan
+          terraform apply -auto-approve
 
           echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-        working-directory: ./terraform/eks-cluster
-
-      - name: Deploy Cluster with Node Groups
-        id: deploy_nodes
-        run: |
-          terraform plan -out standard-cluster-with-nodegroups.out
-          terraform apply -auto-approve standard-cluster-with-nodegroups.out
         working-directory: ./terraform/eks-cluster
 
   bootstrap:
@@ -114,10 +106,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.OIDC_ROLE }}
           aws-region: ${{ inputs.region }}

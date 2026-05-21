@@ -27,8 +27,8 @@ variable "deploy_node_groups" {
   default     = true
 }
 
-variable "enable_default_network_addons" {
-  description = "Set to true for default network addons (kube-proxy and vpc-cni). For non-default network addons, set to false and use Cilium"
+variable "enable_default_networking" {
+  description = "Set to true for default networking (kube-proxy and vpc-cni). For non-default networking, set to false and use Cilium"
   type        = bool
   default     = true
 }
