@@ -115,10 +115,6 @@ jobs:
           echo "Adding TLSRoute Experimental CRD for Cilium (v1alpha2)"
           kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.4.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
 
-
-          echo "Enabling Prefix Delegation on VPC CNI"
-          kubectl set env daemonset aws-node -n kube-system ENABLE_PREFIX_DELEGATION=true || true
-
           helm repo add cilium https://helm.cilium.io/
           helm repo update
           helm upgrade --install cilium cilium/cilium --version 1.19.3 \
@@ -143,10 +139,6 @@ jobs:
             --set bpf.masquerade=false \
             --set autoDirectNodeRoutes=true \
             --set hostLegacyRouting=false
-
-          echo "Removing kubeproxy & VPC CNI daemon sets if exists"
-          kubectl delete ds kube-proxy -n kube-system --ignore-not-found=true
-          kubectl delete ds aws-node -n kube-system --ignore-not-found=true
 
           echo "Creating cluster with node group"
           terraform plan -var-file=vars/cilium-with-nodegroup.tfvars -out cilium-cluster-with-nodegroups.out
