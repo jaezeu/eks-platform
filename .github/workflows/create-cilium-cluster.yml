@@ -217,12 +217,6 @@ jobs:
           cd addons/loki
           chmod +x init.sh
           ./init.sh
-
-      - name: Deploy Gateway Resources
-        if: ${{ github.event.inputs.gateway == 'true' }}
-        run: |
-          cd addons/cilium/gateway
-          kubectl apply -f .
       
       - name: Deploy Tetragon
         if: ${{ github.event.inputs.tetragon == 'true' }}
