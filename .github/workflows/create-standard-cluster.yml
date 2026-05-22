@@ -93,8 +93,8 @@ jobs:
       - name: Deploy Cluster and Extract Outputs
         id: deploy_steps
         run: |
-          terraform plan
-          terraform apply -auto-approve
+          terraform plan -out=cluster.out
+          terraform apply -auto-approve cluster.out
 
           echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
