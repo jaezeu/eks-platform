@@ -1,0 +1,21 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-namespace-name-format
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: namespace-must-end-with-eks-activity
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              operations:
+                - CREATE
+      validate:
+        message: "Namespace name must follow this format: <name>-eks-activity"
+        pattern:
+          metadata:
+            name: "*-eks-activity"

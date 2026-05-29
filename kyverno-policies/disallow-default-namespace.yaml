@@ -1,0 +1,19 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-default-namespace
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: no-default-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - "*"
+              namespaces:
+                - default
+      validate:
+        message: "Do not create resources in the default namespace."
+        deny: {}

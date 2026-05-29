@@ -1,0 +1,24 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: prevent-protected-namespace-deletion
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: block-namespace-deletion
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - ingress-nginx
+                - cert-manager
+                - external-dns
+                - argocd
+              operations:
+                - DELETE
+      validate:
+        message: "Deleting protected namespaces is not allowed."
+        deny: {}
