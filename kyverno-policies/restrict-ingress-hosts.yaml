@@ -1,0 +1,20 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-ingress-hosts
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: host-must-use-class-domain
+      match:
+        any:
+          - resources:
+              kinds:
+                - Ingress
+      validate:
+        message: "Ingress host must end with .sctp-sandbox.com."
+        pattern:
+          spec:
+            rules:
+              - host: "*.sctp-sandbox.com"

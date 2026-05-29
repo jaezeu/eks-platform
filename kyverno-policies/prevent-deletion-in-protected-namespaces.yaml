@@ -13,10 +13,12 @@ spec:
               kinds:
                 - "*"
               namespaces:
+                - kube-system
                 - ingress-nginx
                 - cert-manager
                 - external-dns
                 - argocd
+                - kyverno
               operations:
                 - DELETE
       validate:
