@@ -64,7 +64,7 @@ module "ebs_csi_driver_role" {
   ]
 
   role_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy",
+    "arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicyV2",
   ]
 }
 

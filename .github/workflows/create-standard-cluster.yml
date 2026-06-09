@@ -173,5 +173,6 @@ jobs:
         if: ${{ github.event.inputs.ebs-csi == 'true' }}
         run: |
           cd addons/ebs-csi-driver
-          kubectl apply -f .
+          chmod +x init.sh
+          ./init.sh
 
