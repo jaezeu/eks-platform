@@ -7,8 +7,6 @@ helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-d
 helm repo update
 
 # 2. Install or upgrade ebs csi driver
-helm upgrade --install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version 2.43.0 \
+helm upgrade --install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version 2.61.1 \
   --namespace kube-system \
   --values values.yaml
-
-
