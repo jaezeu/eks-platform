@@ -87,7 +87,7 @@ This repository supports two EKS networking architectures. Use this to decide:
 | Observability | Add-ons only | + Hubble (flow visibility) |
 | Runtime security | Add-ons only | + Tetragon |
 | mTLS / identity | - | + SPIRE (mutual auth) |
-| Ingress | NGINX Ingress | NGINX **or** Gateway API |
+| Ingress | NGINX Ingress | Cilium Ingress **or** Gateway API |
 | Bootstrap | Single `terraform apply` | Split apply (CNI before nodes) |
 | Choose it for | General-purpose workloads, learning | High-performance networking, security & observability deep-dives |
 
