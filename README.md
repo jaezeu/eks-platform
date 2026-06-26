@@ -79,7 +79,7 @@ to AWS services such as Route 53 and S3.
 
 This repository supports two EKS networking architectures. Use this to decide:
 
-| | **Standard** | **Cilium (kube-proxy free)** |
+| Feature | **Standard** | **Cilium (kube-proxy free)** |
 |---|---|---|
 | CNI | AWS VPC CNI | Cilium (ENI mode) |
 | Service routing | kube-proxy (iptables) | eBPF datapath |
