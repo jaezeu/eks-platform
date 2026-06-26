@@ -1,6 +1,18 @@
 # EKS Platform
 
-A comprehensive AWS EKS (Elastic Kubernetes Service) platform repository designed for learning, demonstration, and bootstrapped cluster deployments. This repository provides Infrastructure as Code (IaC) using Terraform, essential Kubernetes add-ons via Helm, and example manifests for common deployment manifests.
+![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.14-7B42BC?logo=terraform&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/EKS-v1.36-326CE5?logo=kubernetes&logoColor=white)
+![Cilium](https://img.shields.io/badge/Cilium-1.19-F8C517?logo=cilium&logoColor=black)
+![Helm](https://img.shields.io/badge/Helm-v3-0F1689?logo=helm&logoColor=white)
+![License](https://img.shields.io/badge/License-see%20LICENSE-blue)
+
+A comprehensive AWS EKS (Elastic Kubernetes Service) platform repository designed for learning, demonstration, and bootstrapped cluster deployments. This repository provides Infrastructure as Code (IaC) using Terraform, essential Kubernetes add-ons via Helm, and example manifests for common deployment patterns.
+
+> [!WARNING]
+> **This provisions billable AWS resources** — an EKS control plane, ARM64 EC2
+> node groups, a NAT gateway, load balancers and S3 buckets. Costs accrue while
+> the cluster runs. Tear everything down with the
+> [`cleanup.yml`](.github/workflows/cleanup.yml) workflow when you are done.
 
 ## Table of Contents
 
@@ -58,7 +70,27 @@ Ensure the following tools are installed and properly configured:
 
 ## Architecture Overview
 
-This repository supports two EKS networking architectures:
+![Platform architecture overview](docs/images/platform-overview.png)
+
+The platform provisions an EKS cluster inside a dedicated VPC, with managed
+node groups in private subnets, an in-cluster add-on layer (ingress,
+monitoring, GitOps, logging), and IRSA roles granting least-privilege access
+to AWS services such as Route 53 and S3.
+
+This repository supports two EKS networking architectures. Use this to decide:
+
+| | **Standard** | **Cilium (kube-proxy free)** |
+|---|---|---|
+| CNI | AWS VPC CNI | Cilium (ENI mode) |
+| Service routing | kube-proxy (iptables) | eBPF datapath |
+| Observability | Add-ons only | + Hubble (flow visibility) |
+| Runtime security | Add-ons only | + Tetragon |
+| mTLS / identity | — | + SPIRE (mutual auth) |
+| Ingress | NGINX Ingress | NGINX **or** Gateway API |
+| Bootstrap | Single `terraform apply` | Split apply (CNI before nodes) |
+| Choose it for | General-purpose workloads, learning | High-performance networking, security & observability deep-dives |
+
+![Standard VPC CNI vs Cilium eBPF networking](docs/images/networking-modes.png)
 
 ### Standard EKS Cluster
 - Uses AWS VPC CNI for pod networking
@@ -71,6 +103,15 @@ This repository supports two EKS networking architectures:
 - Replaces kube-proxy with eBPF for improved performance
 - Requires Cilium installation before node groups become healthy
 - Best for: High-performance networking, security policies, observability
+
+The Cilium deployment bundles a full eBPF stack — Hubble for flow visibility,
+Tetragon for runtime security, SPIRE for mutual (mTLS) authentication, and the
+Gateway API for ingress:
+
+![Cilium stack deep dive](docs/images/cilium-architecture.png)
+
+> Diagrams are generated as code with [`diagrams`](https://diagrams.mingrammer.com/);
+> see [docs/diagrams/](docs/diagrams/) to regenerate them.
 
 ## Repository Structure
 
@@ -100,6 +141,11 @@ This repository supports two EKS networking architectures:
 | ├── **learner-prometheus/** | Custom Prometheus deployment for learning |
 
 ## Quick Start
+
+The cluster is bootstrapped in a fixed order — deployer role, Terraform, CNI,
+node groups, add-ons, then workloads:
+
+![Cluster bootstrap flow](docs/images/bootstrap-flow.png)
 
 It is recommended to make use of the workflows in `.github/workflows` for cluster creation/destruction.
 
