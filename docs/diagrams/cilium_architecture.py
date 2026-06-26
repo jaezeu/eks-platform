@@ -40,7 +40,6 @@ with Diagram(
     graph_attr=graph_attr,
 ):
     user = User("external\nclient")
-    internet = Custom("", ICON("cilium")) if False else None
 
     with Cluster("AWS VPC  (native routing  ipv4NativeRoutingCIDR 0.0.0.0/0)"):
         eni = ElasticNetworkInterface("ENI IPAM\nprefix delegation\n(ipam.mode=eni)")
