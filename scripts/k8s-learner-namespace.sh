@@ -1,3 +1,12 @@
+#!/usr/bin/env bash
+# Provisions one Kubernetes namespace per learner in the sctp-ce-12-learner
+# IAM group, following the *-eks-activity naming convention enforced by Kyverno.
+# Usernames are lowercased and sanitised to meet DNS label constraints.
+# Idempotent — uses --dry-run=client | apply so re-runs are safe.
+#
+# Usage: AWS_PROFILE=<profile> ./scripts/k8s-learner-namespace.sh
+# Requires: aws cli, kubectl (pointed at target cluster)
+
 aws iam get-group \
   --group-name sctp-ce-12-learner \
   --query 'Users[].UserName' \

@@ -1,5 +1,6 @@
 # EKS Platform
 
+[![Terraform Checks](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml)
 ![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.14-7B42BC?logo=terraform&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/EKS-v1.36-326CE5?logo=kubernetes&logoColor=white)
 ![Cilium](https://img.shields.io/badge/Cilium-1.19-F8C517?logo=cilium&logoColor=black)
@@ -43,8 +44,8 @@ Ensure the following tools are installed and properly configured:
 | Tool | Minimum Version | Purpose |
 |------|----------------|---------|
 | [AWS CLI](https://aws.amazon.com/cli/) | v2.x | AWS resource management |
-| [Terraform](https://www.terraform.io/downloads) | v1.5+ | Infrastructure provisioning |
-| [kubectl](https://kubernetes.io/docs/tasks/tools/) | v1.28+ | Kubernetes cluster management |
+| [Terraform](https://www.terraform.io/downloads) | v1.14+ | Infrastructure provisioning |
+| [kubectl](https://kubernetes.io/docs/tasks/tools/) | v1.35+ | Kubernetes cluster management (cluster runs v1.36) |
 | [Helm](https://helm.sh/docs/intro/install/) | v3.12+ | Kubernetes package management |
 
 ### AWS Prerequisites
@@ -79,13 +80,13 @@ to AWS services such as Route 53 and S3.
 
 This repository supports two EKS networking architectures. Use this to decide:
 
-| Feature | **Standard** | **Cilium (kube-proxy free)** |
+| Feature | **Standard** | **Cilium (kube-proxy free)** |
 |---|---|---|
 | CNI | AWS VPC CNI | Cilium (ENI mode) |
 | Service routing | kube-proxy (iptables) | eBPF datapath |
 | Observability | Add-ons only | + Hubble (flow visibility) |
 | Runtime security | Add-ons only | + Tetragon |
-| mTLS / identity | — | + SPIRE (mutual auth) |
+| mTLS / identity | - | + SPIRE (mutual auth) |
 | Ingress | NGINX Ingress | NGINX **or** Gateway API |
 | Bootstrap | Single `terraform apply` | Split apply (CNI before nodes) |
 | Choose it for | General-purpose workloads, learning | High-performance networking, security & observability deep-dives |
@@ -139,6 +140,9 @@ Gateway API for ingress:
 | ├── **eks-service-types/** | ClusterIP, NodePort, LoadBalancer examples |
 | ├── **ingress-coaching/** | Ingress configuration examples |
 | ├── **learner-prometheus/** | Custom Prometheus deployment for learning |
+| **kyverno-policies/** | Cluster-wide Kyverno admission policies (guardrails) |
+| **scripts/** | Helper scripts (e.g. learner namespace provisioning) |
+| **docs/** | Architecture diagrams (as code) and rendered images |
 
 ## Quick Start
 
