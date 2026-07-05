@@ -21,6 +21,15 @@ spec:
                 - kyverno
               operations:
                 - DELETE
+      # Guardrail for humans only: in-cluster controllers (replicaset
+      # controller, garbage collector, cert-manager cleaning up ACME
+      # solvers, ArgoCD pruning, ...) must stay able to manage resource
+      # lifecycles, or rollouts and cert issuance wedge in these namespaces.
+      exclude:
+        any:
+          - subjects:
+              - kind: Group
+                name: system:serviceaccounts
       validate:
         message: "Deleting resources in protected namespaces is not allowed."
         deny: {}
