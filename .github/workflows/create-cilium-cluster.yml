@@ -185,6 +185,7 @@ jobs:
         run: |
           kubectl apply -f namespace.yml
           kubectl apply -f shared-gateway.yml
+          kubectl apply -f hubble-ui-route.yaml
 
       - name: Deploy ExternalDNS for Route53
         if: ${{ github.event.inputs.external-dns == 'true' }}

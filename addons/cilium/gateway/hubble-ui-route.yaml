@@ -1,0 +1,49 @@
+# Hubble UI exposed via Gateway API — same ListenerSet + HTTPRoute pattern as
+# the other admin UIs (see addons/argocd/gateway-route.yaml). Applied by the
+# Cilium workflow together with the shared Gateway.
+#
+# The listeners stay pending until cert-manager (issues the cert) and
+# external-dns (publishes the hostname) are deployed by the bootstrap job.
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: hubble-listeners
+  namespace: kube-system
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-gateway"
+spec:
+  parentRef:
+    name: shared-gateway
+    namespace: gateway
+  listeners:
+    - name: hubble-https
+      hostname: gateway-hubble.sctp-sandbox.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: hubble-gateway-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hubble-ui-route
+  namespace: kube-system
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "gateway-hubble.sctp-sandbox.com"
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: hubble-listeners
+      sectionName: hubble-https
+  hostnames:
+    - gateway-hubble.sctp-sandbox.com
+  rules:
+    - backendRefs:
+        - name: hubble-ui
+          port: 80
