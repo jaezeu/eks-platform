@@ -77,10 +77,21 @@ jobs:
         run: |
           kubectl delete clusterpolicies --all --ignore-not-found=true || true
 
-      - name: Uninstall all Helm releases except external-dns
+      - name: Uninstall Kyverno
         continue-on-error: true
         run: |
-          helm list -A -o json | jq -r '.[] | select(.name != "external-dns") | "\(.name) \(.namespace)"' | while read release ns; do
+          kyverno_namespace=$(helm list -A -o json | jq -r '.[] | select(.name == "kyverno") | .namespace')
+          if [ -n "$kyverno_namespace" ]; then
+            helm uninstall kyverno -n "$kyverno_namespace" --no-hooks || true
+          fi
+
+          kubectl delete validatingwebhookconfigurations,mutatingwebhookconfigurations \
+            -l webhook.kyverno.io/managed-by=kyverno --ignore-not-found=true || true
+
+      - name: Uninstall all Helm releases except external-dns and cilium
+        continue-on-error: true
+        run: |
+          helm list -A -o json | jq -r '.[] | select(.name != "external-dns" and .name != "cilium" and .name != "kyverno") | "\(.name) \(.namespace)"' | while read release ns; do
             echo "Uninstalling Helm release: $release in namespace: $ns"
             helm uninstall "$release" -n "$ns" || true
           done
@@ -92,20 +103,14 @@ jobs:
         continue-on-error: true
         run: |
           external_dns_namespace=$(helm list -A -o json | jq -r '.[] | select(.name == "external-dns") | "\(.namespace)"')
-          echo "Uninstalling external-dns from namespace: $external_dns_namespace"
           helm uninstall external-dns -n "$external_dns_namespace" || true
           
       - name: Delete all remaining K8s resources
         continue-on-error: true
         run: |
           kubectl delete all --all -A || true
-          # "all" does not include PVCs — delete them explicitly so
-          # dynamically-provisioned EBS volumes are released and don't
-          # keep billing after the cluster is destroyed.
           kubectl delete pvc --all -A || true
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve
         working-directory: ./terraform/eks-cluster
-
-
