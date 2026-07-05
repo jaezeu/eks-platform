@@ -1,0 +1,40 @@
+# Gateway API counterpart of restrict-ingress-hosts: on the Cilium cluster,
+# apps are exposed via HTTPRoute/ListenerSet instead of Ingress, so the domain
+# guardrail must match those kinds too.
+#
+# Lives in this subdirectory (NOT applied by `kubectl apply -f kyverno-policies/`,
+# which is non-recursive) because it references Gateway API kinds — Kyverno can
+# only admit it on clusters where those CRDs exist. addons/kyverno/init.sh
+# applies it conditionally when the HTTPRoute CRD is present.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-gateway-hostnames
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: httproute-hostnames-must-use-class-domain
+      match:
+        any:
+          - resources:
+              kinds:
+                - HTTPRoute
+      validate:
+        message: "HTTPRoute must set spec.hostnames, and every hostname must end with .sctp-sandbox.com."
+        pattern:
+          spec:
+            hostnames:
+              - "*.sctp-sandbox.com"
+    - name: listenerset-hostnames-must-use-class-domain
+      match:
+        any:
+          - resources:
+              kinds:
+                - ListenerSet
+      validate:
+        message: "Every ListenerSet listener must set a hostname ending with .sctp-sandbox.com."
+        pattern:
+          spec:
+            listeners:
+              - hostname: "*.sctp-sandbox.com"
