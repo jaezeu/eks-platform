@@ -5,6 +5,13 @@ variable "enable_external_dns" {
   default     = true
 }
 
+# Scope ExternalDNS's Route53 write access to specific hosted zones
+variable "external_dns_hosted_zone_arns" {
+  description = "Route53 hosted zone ARNs ExternalDNS is allowed to manage records in"
+  type        = list(string)
+  default     = ["arn:aws:route53:::hostedzone/Z00541411T1NGPV97B5C0"] # sctp-sandbox.com
+}
+
 # Set to true if you're making use of Loki with a s3 backend
 variable "enable_loki_s3" {
   description = "Set to true to create IAM role and policies for Loki with a s3 backend"
