@@ -1,0 +1,22 @@
+provider:
+  name: aws
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: ${EXTERNAL_DNS_ROLE_ARN}  # The external-dns role ARN
+env:
+  - name: AWS_DEFAULT_REGION
+    value: ${REGION} # change to region where EKS is installed
+policy: sync # Default is upsert-only
+txtOwnerId: ${CLUSTER_NAME} # e.g. shared-eks-cluster
+# Gateway API cluster: publish records for HTTPRoutes (the gateway-* hosts) in
+# addition to Services. `service` stays enabled so the Cilium Gateway's
+# LoadBalancer Service is still discovered; `ingress` is dropped (no Ingress here).
+sources:
+  - service
+  - gateway-httproute
+# Resolve HTTPRoutes whose parentRef is a ListenerSet (each add-on's
+# gateway-route.yaml) back to the shared Gateway's address. Needs
+# external-dns >= v0.21.0 (chart >= 1.21.x); off by default.
+enableGatewayListenerSets: true
+logLevel: info #[panic, debug, info, warning, error, fatal]
+logFormat: text # text / json

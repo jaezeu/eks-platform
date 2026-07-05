@@ -111,7 +111,7 @@ jobs:
 
           aws eks update-kubeconfig --name "$CLUSTER_NAME"
 
-          echo "Adding Standard Gateway API CRDs plus the experimental TLSRoute CRD for Cilium (v1alpha2)"
+          echo "Adding Gateway API v1.5.1 standard-channel CRDs (per Cilium docs; TLSRoute and ListenerSet are standard as of v1.5)"
           kubectl apply \
             -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml \
             -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_gateways.yaml \
@@ -120,7 +120,7 @@ jobs:
             -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml \
             -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_backendtlspolicies.yaml \
             -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_listenersets.yaml \
-            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.4.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_tlsroutes.yaml
 
           echo "Installing Cilium CNI"
           pushd ../../addons/cilium
@@ -177,6 +177,15 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster_name }}
 
+      # Shared Cilium Gateway (Gateway API). The GatewayClass "cilium" and the
+      # Gateway API CRDs are created in the deploy job; this creates the single
+      # shared Gateway that per-add-on ListenerSets + HTTPRoutes attach to.
+      - name: Deploy Cilium Shared Gateway
+        working-directory: addons/cilium/gateway
+        run: |
+          kubectl apply -f namespace.yml
+          kubectl apply -f shared-gateway.yml
+
       - name: Deploy ExternalDNS for Route53
         if: ${{ github.event.inputs.external-dns == 'true' }}
         working-directory: addons/r53-externaldns
@@ -185,9 +194,9 @@ jobs:
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
           CLUSTER_NAME: ${{ needs.deploy.outputs.cluster_name }}
         run: |
-          envsubst < values.yaml > updated-values.yaml
-          mv updated-values.yaml values.yaml
-          ./init.sh
+          envsubst < gateway-values.yaml > updated-values.yaml
+          mv updated-values.yaml gateway-values.yaml
+          ./init.sh gateway-values.yaml
 
       - name: Deploy Cert Manager
         if: ${{ github.event.inputs.cert-manager == 'true' }}
@@ -195,18 +204,22 @@ jobs:
         env:
           EMAIL: ${{ secrets.EMAIL_ADDRESS }}
         run: |
-          ./init.sh
-          envsubst < cluster-issuer.yaml | kubectl apply -f -
+          ./init.sh gateway-values.yaml gateway-cluster-issuer.yaml
+          envsubst < gateway-cluster-issuer.yaml | kubectl apply -f -
 
       - name: Deploy ArgoCD
         if: ${{ github.event.inputs.argocd == 'true' }}
         working-directory: addons/argocd
-        run: ./init.sh
+        run: |
+          ./init.sh gateway-values.yaml
+          kubectl apply -f gateway-route.yaml
 
       - name: Deploy Prometheus and Grafana
         if: ${{ github.event.inputs.monitoring == 'true' }}
         working-directory: addons/kube-prometheus-stack
-        run: ./init.sh
+        run: |
+          ./init.sh gateway-values.yaml
+          kubectl apply -f gateway-route.yaml
 
       - name: Deploy Loki
         if: ${{ github.event.inputs.logging == 'true' }}

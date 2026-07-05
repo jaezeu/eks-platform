@@ -1,0 +1,30 @@
+# Gateway API equivalent of ingress-coaching/ingress.yaml — part 1 of 2.
+#
+# On the Cilium cluster there is no Ingress. Instead, the platform team runs a
+# single shared Gateway (`shared-gateway` in the `gateway` namespace) and each
+# team attaches its OWN listener to it with a ListenerSet — no change to the
+# Gateway itself. The cert-manager annotation issues the TLS cert into the
+# Secret named under certificateRefs (equivalent of Ingress spec.tls).
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: jaz-echo-listeners
+  namespace: jaz-eks-activity
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-gateway" # Cert-Manager
+spec:
+  parentRef:
+    name: shared-gateway
+    namespace: gateway
+  listeners:
+    - name: echo-https
+      hostname: gateway-jaz-echoapp.sctp-sandbox.com # Route53 Record
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: jaz-echoapp-gateway-tls # Secret cert-manager will create
+      allowedRoutes:
+        namespaces:
+          from: Same # only HTTPRoutes in this namespace may use this listener

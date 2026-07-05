@@ -1,0 +1,55 @@
+# ArgoCD exposed via Gateway API on the Cilium cluster.
+#
+# ListenerSet — attaches an HTTPS listener for the ArgoCD hostname onto the
+#   shared Gateway (in the `gateway` namespace) without editing that Gateway.
+#   The cert-manager annotation asks cert-manager to issue the Secret named in
+#   certificateRefs (gateway-shim).
+# HTTPRoute — routes the hostname to argocd-server (HTTP :80, TLS already
+#   terminated at the Gateway).
+#
+# Requires: Cilium >= 1.20.0-pre.4 (ListenerSet support) and cert-manager's
+# ListenerSet reconciliation flags — both set by this repo's Cilium workflow
+# (see addons/cert-manager/gateway-values.yaml).
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: argocd-listeners
+  namespace: argocd
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-gateway"
+spec:
+  parentRef:
+    name: shared-gateway
+    namespace: gateway
+  listeners:
+    - name: argocd-https
+      hostname: gateway-argocd.sctp-sandbox.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: argocd-gateway-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd-route
+  namespace: argocd
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "gateway-argocd.sctp-sandbox.com"
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: argocd-listeners
+      sectionName: argocd-https
+  hostnames:
+    - gateway-argocd.sctp-sandbox.com
+  rules:
+    - backendRefs:
+        - name: argocd-server
+          port: 80

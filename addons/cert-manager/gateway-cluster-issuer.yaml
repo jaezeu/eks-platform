@@ -1,0 +1,28 @@
+# ClusterIssuer for the Cilium (Gateway API) cluster.
+#
+# Unlike letsencrypt-prod (which solves HTTP-01 through an nginx Ingress), this
+# issuer solves HTTP-01 by creating a temporary HTTPRoute attached to the shared
+# Cilium Gateway. cert-manager references this issuer via the
+# `cert-manager.io/cluster-issuer: letsencrypt-gateway` annotation on the
+# ListenerSets (see each add-on's gateway-route.yaml).
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-gateway
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ${EMAIL} # substituted by the workflow (secrets.EMAIL_ADDRESS)
+    privateKeySecretRef:
+      name: letsencrypt-gateway
+    solvers:
+    - http01:
+        # cert-manager creates a short-lived HTTPRoute parented to shared-gateway
+        # to serve the ACME challenge. It binds to the Gateway's own :80 "web"
+        # listener (allowedRoutes.from: All), so challenges for any host resolve.
+        gatewayHTTPRoute:
+          parentRefs:
+            - name: shared-gateway
+              namespace: gateway
+              kind: Gateway
+              group: gateway.networking.k8s.io

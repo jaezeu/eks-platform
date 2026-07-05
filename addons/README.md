@@ -18,7 +18,7 @@ directory is self-contained: a `values.yaml` (Helm configuration) and an
 | [loki](loki/) | `loki` | grafana/loki (+ promtail) | 6.29.0 | Log aggregation (S3 backend) |
 | [ebs-csi-driver](ebs-csi-driver/) | `kube-system` | aws-ebs-csi-driver | 2.61.1 | EBS-backed persistent volumes |
 | [kyverno](kyverno/) | `kyverno` | kyverno/kyverno | 3.8.1 | Admission controller + [guardrail policies](../kyverno-policies/) |
-| [cilium](cilium/) | `kube-system` | cilium/cilium | 1.19.3 | eBPF CNI, Hubble, Gateway API (Cilium clusters) |
+| [cilium](cilium/) | `kube-system` | cilium/cilium | 1.20.0-pre.4 | eBPF CNI, Hubble, Gateway API + ListenerSet (Cilium clusters) |
 | [cilium/tetragon](cilium/tetragon/) | `kube-system` | cilium/tetragon | v1.5.0 | eBPF runtime security (Cilium clusters) |
 
 > **Cilium** is a special case: its `values.yaml`/`init.sh` live here, but it is
@@ -26,6 +26,27 @@ directory is self-contained: a `values.yaml` (Helm configuration) and an
 > **before node groups join** (between the two Terraform applies), not by the
 > bootstrap job. See [cilium/](cilium/) for the Gateway API and SPIRE
 > resources, and the [Cilium architecture diagram](../docs/images/cilium-architecture.png).
+
+## Standard vs Gateway API variants
+
+Add-ons exposed over HTTP(S) carry **two full config files** — the default
+`values.yaml` (nginx Ingress, standard cluster) and a `gateway-*` variant
+(Gateway API, Cilium cluster). Each `init.sh` defaults to `values.yaml`; the
+Cilium workflow passes the variant explicitly (e.g. `./init.sh gateway-values.yaml`).
+
+| Add-on | Gateway API files |
+|--------|-------------------|
+| cert-manager | `gateway-values.yaml` (ListenerSet reconciliation on) + `gateway-cluster-issuer.yaml` (`letsencrypt-gateway`, HTTP-01 via `gatewayHTTPRoute`) |
+| r53-externaldns | `gateway-values.yaml` (`gateway-httproute` source, ListenerSet resolution) |
+| argocd | `gateway-values.yaml` (ingress off, insecure server) + `gateway-route.yaml` (ListenerSet + HTTPRoute) |
+| kube-prometheus-stack | `gateway-values.yaml` (ingress off) + `gateway-route.yaml` (ListenerSet + 2 HTTPRoutes) |
+
+On the Cilium cluster the workflow creates one shared entrypoint —
+[`cilium/gateway/shared-gateway.yml`](cilium/gateway/shared-gateway.yml), a
+Gateway owning only the `:80` listener (ACME challenges + plain HTTP) with
+`allowedListeners: All`. Every app then self-serves its HTTPS listener + cert +
+route with a **ListenerSet + HTTPRoute** in its own namespace — see
+[deployment-manifests-examples/gateway-api-coaching](../deployment-manifests-examples/gateway-api-coaching/).
 
 ## Install order & dependencies
 

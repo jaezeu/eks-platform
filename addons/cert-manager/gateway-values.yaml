@@ -1,0 +1,25 @@
+# cert-manager values for Cilium (Gateway API) clusters.
+#
+# Same as values.yaml, but turns ON Gateway API support so cert-manager can:
+#   - solve ACME HTTP-01 challenges through an HTTPRoute (the letsencrypt-gateway
+#     ClusterIssuer's gatewayHTTPRoute solver), and
+#   - issue the certs referenced by Gateway / ListenerSet HTTPS listeners
+#     (the gateway-shim, driven by the cert-manager.io/cluster-issuer annotation).
+#
+# Kept as a SEPARATE file (not just enabled in values.yaml) because turning this
+# on for a cluster that has no Gateway API CRDs installed — the standard/nginx
+# cluster — makes the cert-manager controller error trying to watch Gateways.
+crds:
+  enabled: true
+config:
+  apiVersion: controller.config.cert-manager.io/v1alpha1
+  kind: ControllerConfiguration
+  # Reconcile Gateway resources (ACME gatewayHTTPRoute solver + gateway-shim)
+  enableGatewayAPI: true
+  # Also reconcile ListenerSet resources (alpha since cert-manager 1.20) —
+  # this is what issues the certs referenced by each add-on's ListenerSet.
+  # Requires the Gateway API v1.5+ standard-channel CRDs (applied by the
+  # workflow before the bootstrap job runs).
+  enableGatewayAPIListenerSet: true
+  featureGates:
+    ListenerSets: true

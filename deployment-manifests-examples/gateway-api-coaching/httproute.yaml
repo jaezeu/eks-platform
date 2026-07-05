@@ -1,0 +1,29 @@
+# Gateway API equivalent of ingress-coaching/ingress.yaml — part 2 of 2.
+#
+# The HTTPRoute plays the role of the Ingress `rules`: match requests for the
+# hostname and forward them to the Service. It attaches to OUR listener
+# (defined in listenerset.yaml) via parentRefs + sectionName. ExternalDNS
+# creates the Route53 record from the route's hostname automatically.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jaz-echo-route
+  namespace: jaz-eks-activity
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "gateway-jaz-echoapp.sctp-sandbox.com" # Route53
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: jaz-echo-listeners
+      sectionName: echo-https
+  hostnames:
+    - gateway-jaz-echoapp.sctp-sandbox.com # Route53 Record
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: jaz-echo-service
+          port: 80
