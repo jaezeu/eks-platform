@@ -17,7 +17,7 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Cache TFLint plugin directory
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.tflint.d/plugins
           key: ${{ runner.os }}-tflint-${{ hashFiles('.tflint.hcl') }}
@@ -41,6 +41,29 @@ jobs:
           cd terraform/eks-cluster-deployer-role
           tflint --format compact
         continue-on-error: false
+
+  tfsec:
+    name: tfsec (IaC security scan)
+    runs-on: ubuntu-latest
+    env:
+      # renovate: datasource=github-releases depName=aquasecurity/tfsec
+      TFSEC_VERSION: v1.28.14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install tfsec
+        run: |
+          curl -sL -o /usr/local/bin/tfsec \
+            "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-amd64"
+          chmod +x /usr/local/bin/tfsec
+
+      # --exclude-downloaded-modules: findings inside upstream registry modules
+      # reflect root-level decisions (e.g. the documented public EKS endpoint),
+      # not fixable code in this repo. Deliberate exceptions in our own code are
+      # suppressed inline with justified `#tfsec:ignore` comments.
+      - name: Run tfsec
+        run: tfsec terraform/ --exclude-downloaded-modules --no-color
 
   terraform-fmt-and-validate:
     name: Terraform Format and Validate Check

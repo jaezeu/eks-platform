@@ -11,7 +11,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-KUBE_VERSION="${KUBE_VERSION:-1.33.0}"
+# exported: the helm/kubectl shims run inside each init.sh's child shell
+export KUBE_VERSION="${KUBE_VERSION:-1.33.0}"
 
 # Dummy values for the ${...} placeholders normally substituted by the
 # cluster-creation workflows.
@@ -57,7 +58,9 @@ helm() {
     prev="$a"
   done
   echo "  helm ${args[*]}" >&2
-  command helm "${args[@]}" --kube-version "$KUBE_VERSION" | kubeconform_cmd
+  # subshell + pipefail: a failed render must fail the check even though
+  # kubeconform would exit 0 on the resulting empty input
+  (set -o pipefail; command helm "${args[@]}" --kube-version "$KUBE_VERSION" | kubeconform_cmd -)
 }
 export -f helm kubeconform_cmd
 
@@ -79,7 +82,7 @@ kubectl() {
         for f in "$path"/*.y*ml; do envsubst < "$f" > "$envsubst_dir/$(basename "$f")"; done
         kubeconform_cmd "$envsubst_dir"
       else
-        envsubst < "$path" | kubeconform_cmd
+        envsubst < "$path" | kubeconform_cmd -
       fi
       ;;
     get) return 0 ;;
@@ -111,13 +114,15 @@ declare -A GATEWAY_ARGS=(
 )
 
 rc=0
+# bash -e: abort an init.sh on the first failed command, so a broken render in
+# a multi-command script (e.g. cert-manager) can't be masked by a later success
 for addon in "${ADDONS[@]}"; do
   echo "==> $addon (default values)"
-  (cd "$REPO_ROOT/addons/$addon" && bash init.sh) || rc=1
+  (cd "$REPO_ROOT/addons/$addon" && bash -e init.sh) || rc=1
   if [ -n "${GATEWAY_ARGS[$addon]:-}" ]; then
     echo "==> $addon (gateway variant)"
     # shellcheck disable=SC2086 # word-splitting the args is intended
-    (cd "$REPO_ROOT/addons/$addon" && bash init.sh ${GATEWAY_ARGS[$addon]}) || rc=1
+    (cd "$REPO_ROOT/addons/$addon" && bash -e init.sh ${GATEWAY_ARGS[$addon]}) || rc=1
   fi
 done
 
