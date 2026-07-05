@@ -21,7 +21,7 @@ loki:
    limits_config:
      allow_structured_metadata: true
      volume_enabled: true
-     retention_period: 24h # 28 days retention
+     retention_period: 24h # keep logs for 1 day (sandbox clusters are short-lived)
    compactor:
      retention_enabled: true 
      delete_request_store: s3

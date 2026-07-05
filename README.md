@@ -3,7 +3,8 @@
 [![Terraform Checks](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml)
 ![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.14-7B42BC?logo=terraform&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/EKS-v1.36-326CE5?logo=kubernetes&logoColor=white)
-![Cilium](https://img.shields.io/badge/Cilium-1.19-F8C517?logo=cilium&logoColor=black)
+![Cilium](https://img.shields.io/badge/Cilium-1.20--pre-F8C517?logo=cilium&logoColor=black)
+![Gateway API](https://img.shields.io/badge/Gateway%20API-v1.5%20%2B%20ListenerSet-326CE5?logo=kubernetes&logoColor=white)
 ![Helm](https://img.shields.io/badge/Helm-v3-0F1689?logo=helm&logoColor=white)
 ![License](https://img.shields.io/badge/License-see%20LICENSE-blue)
 
@@ -31,8 +32,9 @@ This repository serves as an EKS demo and learning platform, providing:
 
 - **EKS cluster configurations** with Terraform
 - **Multiple deployment modes**: Standard EKS and Cilium CNI (kube-proxy free)
-- **Essential add-ons**: Monitoring (Prometheus/Loki), Ingress (NGINX), GitOps (ArgoCD), Security (Cert-Manager), and more
-- **Example manifests**: Service types, deployments, ingress patterns, and troubleshooting tools (netshoot)
+- **Two north-south traffic models**: classic NGINX Ingress (standard cluster) and **Gateway API with per-team ListenerSets** (Cilium cluster) — including standard-channel `ListenerSet`, which only shipped in Gateway API v1.5 / Cilium 1.20
+- **Essential add-ons**: Monitoring (Prometheus/Loki), GitOps (ArgoCD), Security (Cert-Manager, Kyverno), and more
+- **Example manifests**: Service types, deployments, Ingress *and* Gateway API patterns, and troubleshooting tools (netshoot)
 - **IRSA (IAM Roles for Service Accounts)** for secure AWS resource access
 
 ## Prerequisites
@@ -87,7 +89,7 @@ This repository supports two EKS networking architectures. Use this to decide:
 | Observability | Add-ons only | + Hubble (flow visibility) |
 | Runtime security | Add-ons only | + Tetragon |
 | mTLS / identity | - | + SPIRE (mutual auth) |
-| Ingress | NGINX Ingress | Cilium Ingress **or** Gateway API |
+| Ingress | NGINX Ingress | Gateway API (shared `Gateway` + per-app `ListenerSet`) |
 | Bootstrap | Single `terraform apply` | Split apply (CNI before nodes) |
 | Choose it for | General-purpose workloads, learning | High-performance networking, security & observability deep-dives |
 
@@ -111,6 +113,28 @@ Gateway API for ingress:
 
 ![Cilium stack deep dive](docs/images/cilium-architecture.png)
 
+### Gateway API with ListenerSets (Cilium cluster)
+
+The Cilium cluster replaces per-app Ingress objects with the Gateway API's
+**self-service listener** model, using standard-channel
+[`ListenerSet`](https://gateway-api.sigs.k8s.io/) — a resource that graduated
+in Gateway API v1.5 and is implemented by Cilium as of 1.20:
+
+- The platform owns **one shared `Gateway`** ([addons/cilium/gateway/](addons/cilium/gateway/))
+  with a single `:80` listener (ACME HTTP-01 challenges) and
+  `allowedListeners: All`.
+- Each app attaches its **own HTTPS listener + TLS cert + route** from its own
+  namespace with a `ListenerSet` + `HTTPRoute` pair — no change to the shared
+  Gateway, no cluster-admin involvement. ArgoCD, Prometheus, Grafana and
+  Hubble UI are all exposed this way (see `addons/*/gateway-route.yaml`).
+- cert-manager issues certs straight off the ListenerSet annotation
+  (HTTP-01 via `gatewayHTTPRoute`), and ExternalDNS publishes each route's
+  hostname — the whole chain is hands-off.
+
+The [gateway-api-coaching](deployment-manifests-examples/gateway-api-coaching/)
+example walks through the same pattern side by side with its classic
+[ingress-coaching](deployment-manifests-examples/ingress-coaching/) equivalent.
+
 > Diagrams are generated as code with [`diagrams`](https://diagrams.mingrammer.com/);
 > see [docs/diagrams/](docs/diagrams/) to regenerate them.
 
@@ -129,6 +153,7 @@ Gateway API for ingress:
 | ├── **cilium/** | eBPF-based CNI with network policies and observability |
 | ├── **ebs-csi-driver/** | Amazon EBS CSI driver for persistent volumes |
 | ├── **kube-prometheus-stack/** | Prometheus, Grafana, and Alertmanager for monitoring |
+| ├── **kyverno/** | Policy engine enforcing the [guardrail policies](kyverno-policies/) |
 | ├── **loki/** | Log aggregation system |
 | ├── **nginx-ingress/** | NGINX Ingress Controller for HTTP(S) routing |
 | ├── **r53-externaldns/** | Automatic DNS record management with Route53 |
@@ -138,7 +163,8 @@ Gateway API for ingress:
 | **deployment-manifests-examples/** | Example Kubernetes manifests for various use cases |
 | ├── **eks-basic-deployment-with-service-account/** | Basic deployment with IRSA |
 | ├── **eks-service-types/** | ClusterIP, NodePort, LoadBalancer examples |
-| ├── **ingress-coaching/** | Ingress configuration examples |
+| ├── **gateway-api-coaching/** | Gateway API (ListenerSet + HTTPRoute) examples — Cilium cluster |
+| ├── **ingress-coaching/** | Ingress configuration examples — standard cluster |
 | ├── **learner-prometheus/** | Custom Prometheus deployment for learning |
 | **kyverno-policies/** | Cluster-wide Kyverno admission policies (guardrails) |
 | **scripts/** | Helper scripts (e.g. learner namespace provisioning) |
@@ -181,6 +207,26 @@ kubectl get nodes
 # Verify add-ons
 kubectl get pods -A
 ```
+
+## Fork & adapt
+
+Course-specific values are **deliberately hardcoded** — the values files and
+example manifests double as teaching references, and concrete hostnames beat
+placeholders for that. (Templating layers like Helmfile/Kustomize overlays were
+considered and rejected as abstraction this repo doesn't need.) To run the
+platform under your own environment there are only a few knobs:
+
+| Knob | Current value | Where to change it |
+|------|---------------|--------------------|
+| Base domain | `sctp-sandbox.com` | Hostnames in add-on values, `gateway-route.yaml` files, Kyverno host policies, and examples — find them all with `grep -rl sctp-sandbox.com` |
+| Route53 zone | `Z00541411…` | `external_dns_hosted_zone_arns` in [terraform/eks-cluster/variables.tf](terraform/eks-cluster/variables.tf) (scopes the ExternalDNS IAM role) |
+| Learner namespace pattern | `*-eks-activity` | [kyverno-policies/restrict-namespace-name-format.yaml](kyverno-policies/restrict-namespace-name-format.yaml) and [scripts/](scripts/) |
+| AWS account | — | `ACCOUNT_ID` GitHub Actions **variable** |
+| ACME registration email | — | `EMAIL_ADDRESS` GitHub Actions **secret** |
+
+> Tip: lower your Route53 zone's SOA negative-cache TTL (default 900s → 60s) —
+> first-time certificate issuance self-checks otherwise wait out cached
+> NXDOMAIN responses for up to 15 minutes after ExternalDNS creates a record.
 
 ## Contributing
 

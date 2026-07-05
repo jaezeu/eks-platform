@@ -45,8 +45,13 @@ On the Cilium cluster the workflow creates one shared entrypoint —
 [`cilium/gateway/shared-gateway.yml`](cilium/gateway/shared-gateway.yml), a
 Gateway owning only the `:80` listener (ACME challenges + plain HTTP) with
 `allowedListeners: All`. Every app then self-serves its HTTPS listener + cert +
-route with a **ListenerSet + HTTPRoute** in its own namespace — see
-[deployment-manifests-examples/gateway-api-coaching](../deployment-manifests-examples/gateway-api-coaching/).
+route with a **ListenerSet + HTTPRoute** in its own namespace — including
+[Hubble UI](cilium/gateway/hubble-ui-route.yaml), which the workflow exposes
+alongside the shared Gateway. See
+[deployment-manifests-examples/gateway-api-coaching](../deployment-manifests-examples/gateway-api-coaching/)
+for the student-facing walkthrough. Hostnames are guarded by the
+[Gateway API Kyverno policy](../kyverno-policies/gateway-api/) on Cilium
+clusters, mirroring `restrict-ingress-hosts` on standard ones.
 
 ## Install order & dependencies
 
