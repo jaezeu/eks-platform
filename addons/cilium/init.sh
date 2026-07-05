@@ -8,4 +8,5 @@
 # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io/
 helm upgrade --install cilium cilium --repo https://helm.cilium.io/ --version 1.20.0-pre.4 \
   --namespace kube-system \
-  --values values.yaml
+  --values values.yaml \
+  --values spire.yaml
