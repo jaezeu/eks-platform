@@ -1,100 +1,28 @@
+# Shared Cilium Gateway — the single L7 entrypoint for the Cilium cluster.
+#
+# This Gateway owns only a plain HTTP :80 listener (used to serve ACME HTTP-01
+# challenges and any plain-HTTP traffic). Per-app HTTPS listeners are NOT defined
+# here — each add-on attaches its own via a ListenerSet (see each add-on's
+# gateway-route.yaml), which is what `allowedListeners` below permits.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: shared-gateway
   namespace: gateway
-  annotations:
-   cert-manager.io/cluster-issuer: "letsencrypt-gateway"
 spec:
   gatewayClassName: cilium
+  # Let ListenerSets in any namespace attach their listeners to this Gateway.
+  # (Default is None — no ListenerSets allowed — so this line is required.)
+  allowedListeners:
+    namespaces:
+      from: All
   listeners:
-    - name: frontend-http
-      hostname: gateway-frontend.sctp-sandbox.com
+    # Shared HTTP :80. No hostname = matches every host, so cert-manager's
+    # temporary ACME challenge HTTPRoutes (for any of the gateway-* hosts) bind
+    # here. Also carries plain-HTTP routes such as the otel-demo frontend.
+    - name: web
       port: 80
       protocol: HTTP
       allowedRoutes:
         namespaces:
           from: All
-    
-    - name: frontend-https
-      hostname: gateway-frontend.sctp-sandbox.com
-      port: 443
-      protocol: HTTPS
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: admin-frontend-tls
-      allowedRoutes:
-        namespaces:
-          from: All
-
-# ---
-# apiVersion: gateway.networking.k8s.io/v1
-# kind: Gateway
-# metadata:
-#   name: shared-gateway
-#   namespace: gateway
-#   annotations:
-#    cert-manager.io/cluster-issuer: "letsencrypt-gateway"
-# spec:
-#   gatewayClassName: cilium
-#   listeners:
-#     - name: prom-http
-#       hostname: gateway-admin-prom.sctp-sandbox.com
-#       port: 80
-#       protocol: HTTP
-#       allowedRoutes:
-#         namespaces:
-#           from: All
-    
-#     - name: grafana-http
-#       hostname: gateway-admin-grafana.sctp-sandbox.com
-#       port: 80
-#       protocol: HTTP
-#       allowedRoutes:
-#         namespaces:
-#           from: All
-
-#     - name: argocd-http
-#       hostname: gateway-admin-argocd.sctp-sandbox.com
-#       port: 80
-#       protocol: HTTP
-#       allowedRoutes:
-#         namespaces:
-#           from: All
-    
-#     - name: prom-https
-#       hostname: gateway-admin-prom.sctp-sandbox.com
-#       port: 443
-#       protocol: HTTPS
-#       tls:
-#         mode: Terminate
-#         certificateRefs:
-#           - name: admin-tls-secret
-#       allowedRoutes:
-#         namespaces:
-#           from: All
-    
-#     - name: grafana-https
-#       hostname: gateway-admin-grafana.sctp-sandbox.com
-#       port: 443
-#       protocol: HTTPS
-#       tls:
-#         mode: Terminate
-#         certificateRefs:
-#           - name: admin-tls-secret
-#       allowedRoutes:
-#         namespaces:
-#           from: All
-
-#     - name: argocd-https
-#       hostname: gateway-admin-argocd.sctp-sandbox.com
-#       port: 443
-#       protocol: HTTPS
-#       tls:
-#         mode: Terminate
-#         certificateRefs:
-#           - name: admin-tls-secret
-#       allowedRoutes:
-#         namespaces:
-#           from: All

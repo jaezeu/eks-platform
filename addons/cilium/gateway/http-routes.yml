@@ -1,3 +1,11 @@
+# Plain-HTTP route for the otel-demo frontend, bound to the shared Gateway's
+# :80 "web" listener. Applied manually (not by the workflow) once otel-demo is
+# deployed.
+#
+# HTTPS routes do NOT live here: each add-on brings its own listener + route
+# via a ListenerSet (see addons/argocd/gateway-route.yaml and
+# addons/kube-prometheus-stack/gateway-route.yaml, applied by the Cilium
+# workflow) — same pattern as deployment-manifests-examples/gateway-api-coaching.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -19,66 +27,3 @@ spec:
       backendRefs:
         - name: frontend-proxy
           port: 8080
-
-# ---
-# apiVersion: gateway.networking.k8s.io/v1
-# kind: HTTPRoute
-# metadata:
-#   name: prom-route
-#   namespace: monitoring
-#   annotations:
-#     external-dns.alpha.kubernetes.io/hostname: "gateway-admin-prom.sctp-sandbox.com"
-# spec:
-#   parentRefs:
-#     - name: shared-gateway
-#       namespace: gateway
-#   hostnames:
-#     - gateway-admin-prom.sctp-sandbox.com
-#   rules:
-#     - matches:
-#         - path:
-#             type: PathPrefix
-#             value: /
-#       backendRefs:
-#         - name: kube-prometheus-stack-prometheus
-#           port: 9090
-# ---
-# apiVersion: gateway.networking.k8s.io/v1
-# kind: HTTPRoute
-# metadata:
-#   name: grafana-route
-#   namespace: monitoring
-#   annotations:
-#     external-dns.alpha.kubernetes.io/hostname: "gateway-admin-grafana.sctp-sandbox.com"
-# spec:
-#   parentRefs:
-#     - name: shared-gateway
-#       namespace: gateway
-#   hostnames:
-#     - gateway-admin-grafana.sctp-sandbox.com
-#   rules:
-#     - matches:
-#         - path:
-#             type: PathPrefix
-#             value: /
-#       backendRefs:
-#         - name: kube-prometheus-stack-grafana
-#           port: 80
-# ---
-# apiVersion: gateway.networking.k8s.io/v1
-# kind: HTTPRoute
-# metadata:
-#   name: argocd-route
-#   namespace: argocd
-#   annotations:
-#     external-dns.alpha.kubernetes.io/hostname: "gateway-admin-argocd.sctp-sandbox.com"
-# spec:
-#   parentRefs:
-#     - name: shared-gateway
-#       namespace: gateway
-#   hostnames:
-#     - gateway-admin-argocd.sctp-sandbox.com
-#   rules:
-#     - backendRefs:
-#       - name: argocd-server
-#         port: 80
