@@ -158,6 +158,14 @@ It is recommended to make use of the workflows in `.github/workflows` for cluste
 - `.github/workflows/create-standard-cluster.yml` - EKS standard cluster creation with VPC CNI & Addons
 - `.github/workflows/cleanup.yml` - Destruction of all cluster related resources
 
+> [!NOTE]
+> **The deployer role uses `AdministratorAccess`.** This is a deliberate
+> tradeoff for a sandbox teaching account: the workflows create IAM roles, VPCs,
+> EKS clusters and S3 buckets, and keeping the policy broad avoids
+> permission-debugging during lessons. Do **not** copy this pattern to a
+> production account — scope the role down to the specific services Terraform
+> manages there.
+
 Once the cluster is created, you may use the command line shown below to access your cluster.
 
 ```bash

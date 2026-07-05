@@ -1,4 +1,4 @@
 controller:
   serviceAccount:
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::255945442255:role/shared-cluster-ebs-csidriver-role
+      eks.amazonaws.com/role-arn: ${EBS_CSI_ROLE_ARN} # substituted from the Terraform output ebs_csi_driver_role_arn

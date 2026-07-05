@@ -11,8 +11,8 @@ loki:
    auth_enabled: false
    storage_config:
      aws:
-       region: ap-southeast-1 # for example, eu-west-2  
-       bucketnames: <replace-chunk-bucket> # Your actual S3 bucket name, for example, loki-aws-dev-chunks, get from the output of your TF stack
+       region: ${REGION} # substituted by the workflow (or envsubst manually) from the cluster region
+       bucketnames: ${LOKI_CHUNKS_BUCKET} # substituted from the Terraform output loki_chunks_bucket_name
        s3forcepathstyle: false
    ingester:
        chunk_encoding: snappy
@@ -30,8 +30,8 @@ loki:
     storage:
       type: s3
       s3:
-        region: ap-southeast-1 # for example, eu-west-2
-        bucketnames: <replace-ruler-bucket> # Your actual S3 bucket name, for example, loki-aws-dev-ruler, get from the output of your TF stack
+        region: ${REGION} # substituted by the workflow (or envsubst manually) from the cluster region
+        bucketnames: ${LOKI_RULER_BUCKET} # substituted from the Terraform output loki_ruler_bucket_name
         s3forcepathstyle: false
       alertmanager_url: http://kube-prometheus-stack-alertmanager.monitoring:9093 # The URL of the Alertmanager to send alerts (Prometheus, Mimir, etc.)
 
@@ -41,18 +41,18 @@ loki:
    storage:
       type: s3
       bucketNames:
-        chunks: "<replace-chunk-bucket>" # Your actual S3 bucket name (loki-aws-dev-chunks)
-        ruler: "<replace-ruler-bucket>" # Your actual S3 bucket name (loki-aws-dev-ruler)
+        chunks: "${LOKI_CHUNKS_BUCKET}" # substituted from the Terraform output loki_chunks_bucket_name
+        ruler: "${LOKI_RULER_BUCKET}" # substituted from the Terraform output loki_ruler_bucket_name
         # admin: "<Insert s3 bucket name>" # Your actual S3 bucket name (loki-aws-dev-admin) - GEL customers only
       s3:
-        region: ap-southeast-1 # eu-west-2
+        region: ${REGION} # substituted by the workflow (or envsubst manually) from the cluster region
         #insecure: false
       # s3forcepathstyle: false
 
 serviceAccount:
  create: true
  annotations:
-   "eks.amazonaws.com/role-arn": "arn:aws:iam::255945442255:role/<replace-loki-s3-role>" # The service role you created
+   "eks.amazonaws.com/role-arn": "${LOKI_S3_ROLE_ARN}" # substituted from the Terraform output loki_s3_role_arn
 
 deploymentMode: Distributed
 

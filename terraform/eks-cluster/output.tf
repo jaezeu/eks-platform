@@ -34,6 +34,14 @@ output "loki_ruler_bucket_arn" {
   value = aws_s3_bucket.loki_ruler[*].arn
 }
 
+output "loki_chunks_bucket_name" {
+  value = aws_s3_bucket.loki_chunks[*].id
+}
+
+output "loki_ruler_bucket_name" {
+  value = aws_s3_bucket.loki_ruler[*].id
+}
+
 output "ebs_csi_driver_role_arn" {
   value = module.ebs_csi_driver_role[*].iam_role_arn
 }

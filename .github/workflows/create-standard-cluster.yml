@@ -47,6 +47,11 @@ on:
         description: "Deploy EBS CSI Resources?"
         default: false
         required: true
+      kyverno:
+        type: boolean
+        description: "Deploy Kyverno & guardrail policies?"
+        default: false
+        required: true
 
 permissions:
   id-token: write       # Required for OIDC
@@ -55,7 +60,9 @@ permissions:
 env:
   ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
   OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/shared-eks-cluster-deployer-role
-  CLUSTER_TYPE: standard-cluster # Setting it to this value since its a shared state bucket. Just for ease of identification if anyone else goes in to see.
+  # Workspace is <cluster-type>-<region> so clusters in different regions get separate state.
+  # Named like this since its a shared state bucket - for ease of identification if anyone else goes in to see.
+  WORKSPACE: standard-cluster-${{ github.event.inputs.region }}
 
 jobs:
   deploy:
@@ -64,6 +71,10 @@ jobs:
     outputs:
       cluster_name: ${{ steps.deploy_steps.outputs.CLUSTER_NAME }}
       external_dns_role_arn: ${{ steps.deploy_steps.outputs.EXTERNAL_DNS_ROLE_ARN }}
+      loki_s3_role_arn: ${{ steps.deploy_steps.outputs.LOKI_S3_ROLE_ARN }}
+      loki_chunks_bucket: ${{ steps.deploy_steps.outputs.LOKI_CHUNKS_BUCKET }}
+      loki_ruler_bucket: ${{ steps.deploy_steps.outputs.LOKI_RULER_BUCKET }}
+      ebs_csi_role_arn: ${{ steps.deploy_steps.outputs.EBS_CSI_ROLE_ARN }}
 
     steps:
       - name: Checkout code
@@ -86,7 +97,7 @@ jobs:
 
       - name: Terraform Workspace Setup
         run: |
-          terraform workspace select ${{ env.CLUSTER_TYPE }} || terraform workspace new ${{ env.CLUSTER_TYPE }}
+          terraform workspace select ${{ env.WORKSPACE }} || terraform workspace new ${{ env.WORKSPACE }}
           terraform workspace list
         working-directory: ./terraform/eks-cluster
 
@@ -98,7 +109,18 @@ jobs:
 
           echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
+          echo "LOKI_S3_ROLE_ARN=$(terraform output -json loki_s3_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
+          echo "LOKI_CHUNKS_BUCKET=$(terraform output -json loki_chunks_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
+          echo "LOKI_RULER_BUCKET=$(terraform output -json loki_ruler_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
+          echo "EBS_CSI_ROLE_ARN=$(terraform output -json ebs_csi_driver_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
         working-directory: ./terraform/eks-cluster
+
+      # Fail the deploy job (so bootstrap never runs on a broken cluster) unless
+      # every node has reached Ready.
+      - name: Smoke test - nodes Ready
+        run: |
+          aws eks update-kubeconfig --name ${{ steps.deploy_steps.outputs.CLUSTER_NAME }}
+          kubectl wait --for=condition=Ready nodes --all --timeout=300s
 
   bootstrap:
     runs-on: ubuntu-latest
@@ -119,60 +141,68 @@ jobs:
 
       - name: Deploy Nginx Ingress Controller
         if: ${{ github.event.inputs.nginx-ingress == 'true' }}
-        run: |
-          cd addons/nginx-ingress
-          chmod +x init.sh
-          ./init.sh
+        working-directory: addons/nginx-ingress
+        run: ./init.sh
 
       - name: Deploy ExternalDNS for Route53
         if: ${{ github.event.inputs.external-dns == 'true' }}
+        working-directory: addons/r53-externaldns
         env:
           REGION: ${{ github.event.inputs.region }}
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
           CLUSTER_NAME: ${{ needs.deploy.outputs.cluster_name }}
         run: |
-          cd addons/r53-externaldns
           envsubst < values.yaml > updated-values.yaml
           mv updated-values.yaml values.yaml
-          chmod +x init.sh
           ./init.sh
 
       - name: Deploy Cert Manager
         if: ${{ github.event.inputs.cert-manager == 'true' }}
+        working-directory: addons/cert-manager
         env:
           EMAIL: ${{ secrets.EMAIL_ADDRESS }}
         run: |
-          cd addons/cert-manager
-          chmod +x init.sh
           ./init.sh
-          
           envsubst < cluster-issuer.yaml | kubectl apply -f -
 
       - name: Deploy ArgoCD
         if: ${{ github.event.inputs.argocd == 'true' }}
-        run: |
-          cd addons/argocd
-          chmod +x init.sh
-          ./init.sh
+        working-directory: addons/argocd
+        run: ./init.sh
 
       - name: Deploy Prometheus and Grafana
         if: ${{ github.event.inputs.monitoring == 'true' }}
-        run: |
-          cd addons/kube-prometheus-stack
-          chmod +x init.sh
-          ./init.sh
+        working-directory: addons/kube-prometheus-stack
+        run: ./init.sh
 
       - name: Deploy Loki
         if: ${{ github.event.inputs.logging == 'true' }}
+        working-directory: addons/loki
+        env:
+          REGION: ${{ github.event.inputs.region }}
+          LOKI_S3_ROLE_ARN: ${{ needs.deploy.outputs.loki_s3_role_arn }}
+          LOKI_CHUNKS_BUCKET: ${{ needs.deploy.outputs.loki_chunks_bucket }}
+          LOKI_RULER_BUCKET: ${{ needs.deploy.outputs.loki_ruler_bucket }}
         run: |
-          cd addons/loki
-          chmod +x init.sh
+          envsubst '${REGION} ${LOKI_S3_ROLE_ARN} ${LOKI_CHUNKS_BUCKET} ${LOKI_RULER_BUCKET}' < loki-values.yaml > updated-values.yaml
+          mv updated-values.yaml loki-values.yaml
           ./init.sh
 
       - name: Deploy EBS CSI Driver Resources
         if: ${{ github.event.inputs.ebs-csi == 'true' }}
+        working-directory: addons/ebs-csi-driver
+        env:
+          EBS_CSI_ROLE_ARN: ${{ needs.deploy.outputs.ebs_csi_role_arn }}
         run: |
-          cd addons/ebs-csi-driver
-          chmod +x init.sh
+          envsubst '${EBS_CSI_ROLE_ARN}' < values.yaml > updated-values.yaml
+          mv updated-values.yaml values.yaml
           ./init.sh
+
+      # Kyverno must be last: its policies enforce namespace naming and block
+      # deletions in protected namespaces, which would interfere with the
+      # add-on installs above.
+      - name: Deploy Kyverno & Guardrail Policies
+        if: ${{ github.event.inputs.kyverno == 'true' }}
+        working-directory: addons/kyverno
+        run: ./init.sh
 

@@ -1,0 +1,57 @@
+# Cilium CNI in ENI mode, kube-proxy free (eBPF service routing).
+# Installed by the Cilium cluster workflow BEFORE node groups join —
+# see .github/workflows/create-cilium-cluster.yml.
+#
+# ${CLUSTER_ENDPOINT} is the EKS API server host WITHOUT the https:// scheme
+# (the cluster_endpoint Terraform output already strips it). It is substituted
+# by the workflow via envsubst; for a manual install run:
+#   export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
+#   envsubst < values.yaml > rendered-values.yaml
+#   helm upgrade --install cilium cilium/cilium ... --values rendered-values.yaml
+
+# AWS ENI IPAM — pods get VPC-routable IPs from ENIs, no overlay
+eni:
+  enabled: true
+  awsEnablePrefixDelegation: true
+ipam:
+  mode: eni
+routingMode: native
+ipv4NativeRoutingCIDR: "0.0.0.0/0"
+autoDirectNodeRoutes: true
+egressMasqueradeInterfaces: eth0
+bpf:
+  masquerade: false
+hostLegacyRouting: false
+
+# kube-proxy replacement — Cilium must reach the API server directly since
+# there is no kube-proxy to route the in-cluster kubernetes Service
+kubeProxyReplacement: true
+k8sServiceHost: ${CLUSTER_ENDPOINT}
+k8sServicePort: 443
+
+# Gateway API support (CRDs are applied by the workflow before this install)
+gatewayAPI:
+  enabled: true
+
+# Hubble flow observability
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+  tls:
+    auto:
+      enabled: true
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - http
+
+encryption:
+  enabled: false
+  nodeEncryption: false
