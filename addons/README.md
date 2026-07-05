@@ -17,11 +17,14 @@ directory is self-contained: a `values.yaml` (Helm configuration) and an
 | [kube-prometheus-stack](kube-prometheus-stack/) | `monitoring` | prometheus-community/kube-prometheus-stack | 86.2.2 | Prometheus, Grafana, Alertmanager |
 | [loki](loki/) | `loki` | grafana/loki (+ promtail) | 6.29.0 | Log aggregation (S3 backend) |
 | [ebs-csi-driver](ebs-csi-driver/) | `kube-system` | aws-ebs-csi-driver | 2.61.1 | EBS-backed persistent volumes |
+| [kyverno](kyverno/) | `kyverno` | kyverno/kyverno | 3.8.1 | Admission controller + [guardrail policies](../kyverno-policies/) |
+| [cilium](cilium/) | `kube-system` | cilium/cilium | 1.19.3 | eBPF CNI, Hubble, Gateway API (Cilium clusters) |
 | [cilium/tetragon](cilium/tetragon/) | `kube-system` | cilium/tetragon | v1.5.0 | eBPF runtime security (Cilium clusters) |
 
-> **Cilium** itself (CNI, Hubble, Gateway API) is **not** installed from here — it
-> is installed directly by the [Cilium cluster workflow](../.github/workflows/create-cilium-cluster.yml)
-> before node groups join. See [cilium/](cilium/) for the Gateway API and SPIRE
+> **Cilium** is a special case: its `values.yaml`/`init.sh` live here, but it is
+> installed by the [Cilium cluster workflow](../.github/workflows/create-cilium-cluster.yml)
+> **before node groups join** (between the two Terraform applies), not by the
+> bootstrap job. See [cilium/](cilium/) for the Gateway API and SPIRE
 > resources, and the [Cilium architecture diagram](../docs/images/cilium-architecture.png).
 
 ## Install order & dependencies
@@ -35,6 +38,7 @@ Order matters — several add-ons consume resources created by others:
 5. **loki** — needs its IRSA role and the two S3 buckets created by Terraform (`enable_loki_s3`).
 6. **tetragon** — Cilium clusters only; ships ServiceMonitors scraped by Prometheus (install after monitoring).
 7. **ebs-csi-driver** — needs its IRSA role; required before any workload requesting persistent volumes.
+8. **kyverno** — must be **last**: its [policies](../kyverno-policies/) enforce namespace naming and block deletions in protected namespaces, which would interfere with the installs above.
 
 ### IRSA-dependent add-ons
 

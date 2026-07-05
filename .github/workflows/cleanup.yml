@@ -56,7 +56,7 @@ jobs:
 
       - name: Terraform Workspace Select
         run: |
-          terraform workspace select ${{ github.event.inputs.cluster_type }}
+          terraform workspace select ${{ github.event.inputs.cluster_type }}-${{ github.event.inputs.region }}
         working-directory: ./terraform/eks-cluster
 
       - name: Export terraform outputs
@@ -69,6 +69,13 @@ jobs:
       - name: Update kubeconfig
         continue-on-error: true
         run: aws eks update-kubeconfig --name ${{ steps.tfout.outputs.CLUSTER_NAME }}
+
+      # Must run before any uninstalls: the Kyverno guardrail policies block
+      # deletions in protected namespaces, which would deny the steps below.
+      - name: Remove Kyverno guardrail policies
+        continue-on-error: true
+        run: |
+          kubectl delete clusterpolicies --all --ignore-not-found=true || true
 
       - name: Uninstall all Helm releases except external-dns
         continue-on-error: true
@@ -92,6 +99,10 @@ jobs:
         continue-on-error: true
         run: |
           kubectl delete all --all -A || true
+          # "all" does not include PVCs — delete them explicitly so
+          # dynamically-provisioned EBS volumes are released and don't
+          # keep billing after the cluster is destroyed.
+          kubectl delete pvc --all -A || true
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve

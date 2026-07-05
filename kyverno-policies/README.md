@@ -5,7 +5,9 @@ enforce guardrails on this shared learning cluster. All policies run in
 **Enforce** mode (violating requests are rejected at admission).
 
 > Requires the Kyverno admission controller to be installed in the cluster
-> first (`kyverno` namespace).
+> first (`kyverno` namespace). The cluster creation workflows have a
+> **kyverno** toggle that installs it via [addons/kyverno](../addons/kyverno/)
+> and applies these policies automatically (as the last bootstrap step).
 
 ## Policies
 

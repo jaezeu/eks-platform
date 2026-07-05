@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Installs the Kyverno admission controller, then applies the cluster
+# guardrail policies from kyverno-policies/.
+#
+# NOTE: run this LAST in the bootstrap order. The policies enforce the
+# *-eks-activity namespace naming format and block deletions in protected
+# namespaces, which would interfere with other add-on installs.
+# The cleanup workflow deletes the ClusterPolicies before uninstalling
+# releases for the same reason.
+
+helm repo add kyverno https://kyverno.github.io/kyverno/
+
+helm repo update
+
+# --wait so the admission webhooks are ready before the policies are applied
+# renovate: datasource=helm depName=kyverno registryUrl=https://kyverno.github.io/kyverno/
+helm upgrade --install kyverno kyverno/kyverno --version 3.8.1 \
+  --namespace kyverno \
+  --create-namespace \
+  --wait
+
+kubectl apply -f ../../kyverno-policies/

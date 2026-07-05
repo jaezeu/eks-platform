@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "dependencyDashboard": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Helm chart versions pinned as `--version X.Y.Z` in addon init.sh scripts",
+      "managerFilePatterns": [
+        "**/init.sh"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) registryUrl=(?<registryUrl>\\S+)[\\s\\S]*?--version (?<currentValue>\\S+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group GitHub Actions bumps into a single low-risk PR",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Group Terraform module & provider bumps into a single PR",
+      "matchManagers": [
+        "terraform"
+      ],
+      "groupName": "terraform"
+    },
+    {
+      "description": "One PR per Helm chart, never automerged - addon bumps need human review",
+      "matchDatasources": [
+        "helm"
+      ],
+      "automerge": false
+    }
+  ]
+}
