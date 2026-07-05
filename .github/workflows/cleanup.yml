@@ -96,6 +96,18 @@ jobs:
             helm uninstall "$release" -n "$ns" || true
           done
 
+      # HTTPRoutes, ListenerSets and the shared Gateway are kubectl-applied (not
+      # Helm releases), so the uninstall step above leaves them behind and
+      # external-dns never sees their hosts removed. Delete them while
+      # external-dns is still running so it can clean up the Route53 records.
+      # No-ops on the standard cluster where these CRDs don't exist.
+      - name: Delete Gateway API resources so external-dns removes their records
+        continue-on-error: true
+        run: |
+          kubectl delete httproutes.gateway.networking.k8s.io --all -A --ignore-not-found=true || true
+          kubectl delete listenersets.gateway.networking.k8s.io --all -A --ignore-not-found=true || true
+          kubectl delete gateways.gateway.networking.k8s.io --all -A --ignore-not-found=true || true
+
       - name: Wait for external-dns to sync DNS removals
         run: sleep 60
 
