@@ -111,17 +111,16 @@ jobs:
 
           aws eks update-kubeconfig --name "$CLUSTER_NAME"
 
-          echo "Adding Standard Gateway API CRDs without TLSRoute"
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_gateways.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_backendtlspolicies.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_listenersets.yaml
-          
-          echo "Adding TLSRoute Experimental CRD for Cilium (v1alpha2)"
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.4.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+          echo "Adding Standard Gateway API CRDs plus the experimental TLSRoute CRD for Cilium (v1alpha2)"
+          kubectl apply \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_gateways.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_backendtlspolicies.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.5.1/config/crd/standard/gateway.networking.k8s.io_listenersets.yaml \
+            -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.4.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
 
           echo "Installing Cilium CNI"
           pushd ../../addons/cilium
@@ -144,8 +143,10 @@ jobs:
 
       # Install the cilium CLI on the runner (amd64 — runs on the runner, not the ARM nodes).
       - name: Install Cilium CLI
+        env:
+          # renovate: datasource=github-releases depName=cilium/cilium-cli
+          CILIUM_CLI_VERSION: v0.18.7
         run: |
-          CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
           curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz{,.sha256sum}
           sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
           sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
@@ -242,4 +243,3 @@ jobs:
         if: ${{ github.event.inputs.kyverno == 'true' }}
         working-directory: addons/kyverno
         run: ./init.sh
-

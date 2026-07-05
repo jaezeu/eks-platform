@@ -8,13 +8,9 @@
 # The cleanup workflow deletes the ClusterPolicies before uninstalling
 # releases for the same reason.
 
-helm repo add kyverno https://kyverno.github.io/kyverno/
-
-helm repo update
-
 # --wait so the admission webhooks are ready before the policies are applied
 # renovate: datasource=helm depName=kyverno registryUrl=https://kyverno.github.io/kyverno/
-helm upgrade --install kyverno kyverno/kyverno --version 3.8.1 \
+helm upgrade --install kyverno kyverno --repo https://kyverno.github.io/kyverno/ --version 3.8.1 \
   --namespace kyverno \
   --create-namespace \
   --wait
