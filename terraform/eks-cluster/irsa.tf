@@ -129,7 +129,7 @@ module "loki_s3_role" {
   # No built-in Loki policy in the module — attach the S3 access inline
   create_inline_policy = true
   inline_policy_permissions = {
-    loki_s3 = {
+    LokiS3 = {
       actions = [
         "s3:ListBucket",
         "s3:PutObject",
