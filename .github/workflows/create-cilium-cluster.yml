@@ -60,8 +60,6 @@ permissions:
 env:
   ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
   OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/shared-eks-cluster-deployer-role
-  # Workspace is <cluster-type>-<region> so clusters in different regions get separate state.
-  # Named like this since its a shared state bucket - for ease of identification if anyone else goes in to see.
   WORKSPACE: cilium-cluster-${{ github.event.inputs.region }}
 
 jobs:
@@ -110,7 +108,6 @@ jobs:
 
           export CLUSTER_NAME=$(terraform output -raw cluster_name)
           export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
-          export EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')
 
           aws eks update-kubeconfig --name "$CLUSTER_NAME"
 
@@ -126,7 +123,7 @@ jobs:
           echo "Adding TLSRoute Experimental CRD for Cilium (v1alpha2)"
           kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.4.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
 
-          echo "Installing Cilium (config in addons/cilium/values.yaml, only CLUSTER_ENDPOINT is substituted)"
+          echo "Installing Cilium CNI"
           pushd ../../addons/cilium
           envsubst '${CLUSTER_ENDPOINT}' < values.yaml > updated-values.yaml
           mv updated-values.yaml values.yaml
@@ -138,7 +135,7 @@ jobs:
           terraform apply -auto-approve cilium-cluster-with-nodegroups.out
 
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_OUTPUT
-          echo "EXTERNAL_DNS_ROLE_ARN=$EXTERNAL_DNS_ROLE_ARN" >> $GITHUB_OUTPUT
+          echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
           echo "LOKI_S3_ROLE_ARN=$(terraform output -json loki_s3_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
           echo "LOKI_CHUNKS_BUCKET=$(terraform output -json loki_chunks_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
           echo "LOKI_RULER_BUCKET=$(terraform output -json loki_ruler_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT

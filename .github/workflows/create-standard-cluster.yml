@@ -60,8 +60,6 @@ permissions:
 env:
   ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
   OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/shared-eks-cluster-deployer-role
-  # Workspace is <cluster-type>-<region> so clusters in different regions get separate state.
-  # Named like this since its a shared state bucket - for ease of identification if anyone else goes in to see.
   WORKSPACE: standard-cluster-${{ github.event.inputs.region }}
 
 jobs:
@@ -115,12 +113,11 @@ jobs:
           echo "EBS_CSI_ROLE_ARN=$(terraform output -json ebs_csi_driver_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
         working-directory: ./terraform/eks-cluster
 
-      # Fail the deploy job (so bootstrap never runs on a broken cluster) unless
-      # every node has reached Ready.
-      - name: Smoke test - nodes Ready
+      # Fail the deploy job (so bootstrap never runs on a broken cluster) unless every node has reached Ready.
+      - name: Smoke test to check if nodes are Ready
         run: |
           aws eks update-kubeconfig --name ${{ steps.deploy_steps.outputs.CLUSTER_NAME }}
-          kubectl wait --for=condition=Ready nodes --all --timeout=300s
+          kubectl wait --for=condition=Ready nodes --all --timeout=60s
 
   bootstrap:
     runs-on: ubuntu-latest
