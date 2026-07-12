@@ -1,7 +1,7 @@
 # EKS Platform
 
 [![Terraform Checks](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml)
-![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.14-7B42BC?logo=terraform&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.15-7B42BC?logo=terraform&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/EKS-v1.36-326CE5?logo=kubernetes&logoColor=white)
 ![Cilium](https://img.shields.io/badge/Cilium-1.20--pre-F8C517?logo=cilium&logoColor=black)
 ![Gateway API](https://img.shields.io/badge/Gateway%20API-v1.5%20%2B%20ListenerSet-326CE5?logo=kubernetes&logoColor=white)
