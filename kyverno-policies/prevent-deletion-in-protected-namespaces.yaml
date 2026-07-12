@@ -22,11 +22,15 @@ spec:
               operations:
                 - DELETE
       # Guardrail for humans only: in-cluster controllers must stay able to manage resource lifecycles, or rollouts and cert issuance in these namespaces.
+      # The pipeline's deployer role is also excluded: helm pre-upgrade hooks delete and recreate their resources, so re-running bootstrap would otherwise be blocked.
       exclude:
         any:
           - subjects:
               - kind: Group
                 name: system:serviceaccounts
+          - subjects:
+              - kind: User
+                name: "arn:aws:sts::*:assumed-role/EKSPlatformDeployerRole/*"
       validate:
         message: "Deleting resources in protected namespaces is not allowed."
         deny: {}

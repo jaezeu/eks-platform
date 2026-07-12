@@ -29,7 +29,7 @@ permissions:
 
 env:            
   ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
-  OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/shared-eks-cluster-deployer-role
+  OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/EKSPlatformDeployerRole
           
 jobs:
   cleanup:

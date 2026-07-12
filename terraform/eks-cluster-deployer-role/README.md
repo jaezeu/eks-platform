@@ -4,7 +4,7 @@ Terraform that creates the IAM role the GitHub Actions workflows assume (via
 OIDC) to provision and tear down clusters. **This is the bootstrap step: run it
 once before any cluster workflow.**
 
-The role (`shared-eks-cluster-deployer-role`) is referenced by:
+The role (`EKSPlatformDeployerRole`) is referenced by:
 
 - [create-standard-cluster.yml](../../.github/workflows/create-standard-cluster.yml)
 - [create-cilium-cluster.yml](../../.github/workflows/create-cilium-cluster.yml)
