@@ -1,5 +1,5 @@
 # This workflow cleans up all helm charts deployed within the EKS cluster and destroys the cluster once done.
-# continue-on-error: true has been set for all steps to ensure that the workflow does not fail in the event of other cleanup jobs removing the cluster. This is so that terraform destroy can still be run to remove rouge resources.
+# continue-on-error: true is set on all steps so the workflow keeps going if another cleanup run already removed the cluster; terraform destroy still runs at the end to sweep up rogue resources.
 name: Cleanup
 run-name: Cleanup of ${{ github.event.inputs.cluster_type }} in ${{ github.event.inputs.region }}
 
