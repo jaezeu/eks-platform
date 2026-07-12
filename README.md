@@ -1,12 +1,23 @@
+<div align="center">
+
 # EKS Platform
 
+*Two EKS cluster flavors, bootstrapped, verified end to end, and torn down by CI —
+rebuilt from nothing every month to prove it.*
+
 [![Terraform Checks](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml)
+[![Manifest & Workflow Checks](https://github.com/jaezeu/eks-platform/actions/workflows/manifest-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/manifest-checks.yml)
+[![Monthly Platform Rehearsal](https://github.com/jaezeu/eks-platform/actions/workflows/rehearsal.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/rehearsal.yml)
+
 ![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.15-7B42BC?logo=terraform&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/EKS-v1.36-326CE5?logo=kubernetes&logoColor=white)
 ![Cilium](https://img.shields.io/badge/Cilium-1.20--pre-F8C517?logo=cilium&logoColor=black)
 ![Gateway API](https://img.shields.io/badge/Gateway%20API-v1.5%20%2B%20ListenerSet-326CE5?logo=kubernetes&logoColor=white)
 ![Helm](https://img.shields.io/badge/Helm-v3-0F1689?logo=helm&logoColor=white)
-![License](https://img.shields.io/badge/License-see%20LICENSE-blue)
+![Renovate](https://img.shields.io/badge/Renovate-enabled-1A1F6C?logo=renovate&logoColor=white)
+![License](https://img.shields.io/github/license/jaezeu/eks-platform?color=blue)
+
+</div>
 
 Terraform and Helm for spinning up demo EKS clusters for a teaching course:
 one standard (VPC CNI + NGINX Ingress), one Cilium kube-proxy-free (eBPF +
@@ -26,7 +37,7 @@ policies and example manifests used in lessons.
 | Tool | Minimum Version | Purpose |
 |------|----------------|---------|
 | [AWS CLI](https://aws.amazon.com/cli/) | v2.x | AWS resource management |
-| [Terraform](https://www.terraform.io/downloads) | v1.14+ | Infrastructure provisioning |
+| [Terraform](https://www.terraform.io/downloads) | v1.15+ | Infrastructure provisioning (workflows pin the exact version) |
 | [kubectl](https://kubernetes.io/docs/tasks/tools/) | v1.35+ | Kubernetes cluster management (cluster runs v1.36) |
 | [Helm](https://helm.sh/docs/intro/install/) | v3.12+ | Kubernetes package management |
 
@@ -131,6 +142,13 @@ Use the workflows in `.github/workflows` to create and destroy clusters:
 - `create-standard-cluster.yml` - standard cluster: VPC CNI + add-ons
 - `create-cilium-cluster.yml` - Cilium cluster: Cilium CNI + add-ons
 - `cleanup.yml` - tears down everything the cluster workflows created
+
+Every cluster workflow ends with a **verify job** (workload rollouts, policies,
+TLS certs, live HTTPS checks), and cleanup ends with a **verify-cleanup job**
+that fails unless the account is really empty: no state, no cluster, no orphaned
+load balancers, DNS records or volumes. A [monthly rehearsal](.github/workflows/rehearsal.yml)
+rebuilds both clusters from nothing and tears them down again to prove the
+whole lifecycle still works - and skips itself whenever a live cluster is up.
 
 > [!NOTE]
 > **The deployer role uses `AdministratorAccess`.** This is a deliberate
