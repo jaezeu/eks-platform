@@ -15,11 +15,11 @@ app, but exposed through the shared Cilium Gateway instead of an nginx Ingress.
 
 One `Ingress` object becomes two objects:
 
-- **ListenerSet** ([listenerset.yaml](listenerset.yaml)) — "my hostname + TLS
+- **ListenerSet** ([listenerset.yaml](listenerset.yaml)): "my hostname + TLS
   cert on the shared entrypoint". Replaces `spec.tls` + `ingressClassName`.
   Attaches your own HTTPS listener to `shared-gateway` without touching it
   (the Gateway allows this via `allowedListeners`).
-- **HTTPRoute** ([httproute.yaml](httproute.yaml)) — "requests for my hostname
+- **HTTPRoute** ([httproute.yaml](httproute.yaml)): "requests for my hostname
   go to my Service". Replaces `spec.rules`.
 
 Same annotations as before, on new homes: `cert-manager.io/cluster-issuer`

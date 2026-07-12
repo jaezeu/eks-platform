@@ -12,9 +12,9 @@ in version control and can be regenerated when the architecture changes.
 | `bootstrap_flow.py` | `../images/bootstrap-flow.png` | Both workflows side by side: standard single-apply vs Cilium split-apply (CNI before nodes) + add-on order |
 
 The `icons/` directory holds project logos (Cilium, Hubble, SPIFFE/SPIRE,
-cert-manager, Kyverno, ExternalDNS) used as `Custom` nodes — the `diagrams`
-library does not ship these. They are pulled from the CNCF/project artwork
-repos.
+cert-manager, Kyverno, ExternalDNS) used as `Custom` nodes, since the
+`diagrams` library does not ship these. They are pulled from the CNCF/project
+artwork repos.
 
 ## Prerequisites
 

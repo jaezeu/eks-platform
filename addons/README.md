@@ -29,7 +29,7 @@ directory is self-contained: a `values.yaml` (Helm configuration) and an
 
 ## Standard vs Gateway API variants
 
-Add-ons exposed over HTTP(S) carry **two full config files** — the default
+Add-ons exposed over HTTP(S) carry two full config files: the default
 `values.yaml` (nginx Ingress, standard cluster) and a `gateway-*` variant
 (Gateway API, Cilium cluster). Each `init.sh` defaults to `values.yaml`; the
 Cilium workflow passes the variant explicitly (e.g. `./init.sh gateway-values.yaml`).
@@ -41,11 +41,11 @@ Cilium workflow passes the variant explicitly (e.g. `./init.sh gateway-values.ya
 | argocd | `gateway-values.yaml` (ingress off, insecure server) + `gateway-route.yaml` (ListenerSet + HTTPRoute) |
 | kube-prometheus-stack | `gateway-values.yaml` (ingress off) + `gateway-route.yaml` (ListenerSet + 2 HTTPRoutes) |
 
-On the Cilium cluster the workflow creates one shared entrypoint —
-[`cilium/gateway/shared-gateway.yml`](cilium/gateway/shared-gateway.yml), a
+On the Cilium cluster the workflow creates one shared entrypoint,
+[`cilium/gateway/shared-gateway.yml`](cilium/gateway/shared-gateway.yml): a
 Gateway owning only the `:80` listener (ACME challenges + plain HTTP) with
-`allowedListeners: All`. Every app then self-serves its HTTPS listener + cert +
-route with a **ListenerSet + HTTPRoute** in its own namespace — including
+`allowedListeners: All`. Every app then self-serves its HTTPS listener, cert
+and route with a ListenerSet + HTTPRoute in its own namespace. That includes
 [Hubble UI](cilium/gateway/hubble-ui-route.yaml), which the workflow exposes
 alongside the shared Gateway. See
 [deployment-manifests-examples/gateway-api-coaching](../deployment-manifests-examples/gateway-api-coaching/)
@@ -55,16 +55,16 @@ clusters, mirroring `restrict-ingress-hosts` on standard ones.
 
 ## Install order & dependencies
 
-Order matters — several add-ons consume resources created by others:
+Order matters, since several add-ons consume resources created by others:
 
-1. **nginx-ingress** — provisions the load balancer other UIs are exposed through.
-2. **external-dns** — needs its [IRSA role](../terraform/eks-cluster/irsa.tf) (Route 53); publishes records for Ingress hosts.
-3. **cert-manager** — install the chart, then apply the [`ClusterIssuer`](cert-manager/cluster-issuer.yaml). Other add-ons reference it via `cert-manager.io/cluster-issuer` annotations.
-4. **argocd**, **kube-prometheus-stack** — expose Ingress hosts (depend on 1–3 for DNS + TLS).
-5. **loki** — needs its IRSA role and the two S3 buckets created by Terraform (`enable_loki_s3`).
-6. **tetragon** — Cilium clusters only; ships ServiceMonitors scraped by Prometheus (install after monitoring).
-7. **ebs-csi-driver** — needs its IRSA role; required before any workload requesting persistent volumes.
-8. **kyverno** — must be **last**: its [policies](../kyverno-policies/) enforce namespace naming and block deletions in protected namespaces, which would interfere with the installs above.
+1. **nginx-ingress**: provisions the load balancer other UIs are exposed through.
+2. **external-dns**: needs its [IRSA role](../terraform/eks-cluster/irsa.tf) (Route 53); publishes records for Ingress hosts.
+3. **cert-manager**: install the chart, then apply the [`ClusterIssuer`](cert-manager/cluster-issuer.yaml). Other add-ons reference it via `cert-manager.io/cluster-issuer` annotations.
+4. **argocd**, **kube-prometheus-stack**: expose Ingress hosts (depend on 1-3 for DNS + TLS).
+5. **loki**: needs its IRSA role and the two S3 buckets created by Terraform (`enable_loki_s3`).
+6. **tetragon**: Cilium clusters only; ships ServiceMonitors scraped by Prometheus (install after monitoring).
+7. **ebs-csi-driver**: needs its IRSA role; required before any workload requesting persistent volumes.
+8. **kyverno**: must be **last**. Its [policies](../kyverno-policies/) enforce namespace naming and block deletions in protected namespaces, which would interfere with the installs above.
 
 ### IRSA-dependent add-ons
 

@@ -1,19 +1,19 @@
-## Pre-Requisites
+# ArgoCD
 
-Note that you have to deploy the following components prior to deploying this ArgoCD helm chart:
+Deploy after the ingress layer, ExternalDNS and cert-manager (with its
+ClusterIssuer), since the values files expose the UI with TLS.
 
-- Nginx Ingress Controller
-- ExternalDNS with IRSA
-- Cert-Manager + ClusterIssuer
+`init.sh` installs the chart. It defaults to the standard-cluster values
+(nginx Ingress); the Cilium workflow passes the Gateway API variant:
 
-## Deploying your ArgoCD Helm Chart
+```bash
+./init.sh                       # standard: values.yaml (Ingress)
+./init.sh gateway-values.yaml   # Cilium: gateway-route.yaml pairs with this
+```
 
-Refer to ```init.sh``` for deployment details.
+## First login
 
-## For First Time Login to Argo Server UI
-
-Username: ```admin```
-Password: (Refer to command below to retrieve the randomly generated password)
+Username is `admin`; the initial password is generated at install time:
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d

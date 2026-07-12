@@ -1,6 +1,6 @@
 # Sample Applications
 
-Example workloads used to exercise the platform — ingress, TLS, DNS,
+Example workloads used to exercise the platform: ingress, TLS, DNS,
 persistent storage patterns and Prometheus scraping. Each directory has a
 `values.yaml` and an `init.sh` that installs the Helm release into its own
 namespace.
@@ -10,12 +10,12 @@ namespace.
 | [postgres](postgres/) | `postgres` | bitnami/postgresql 16.7.21 | Database `example-db` / user `example-user`. Metrics + ServiceMonitor enabled. |
 | [wordpress](wordpress/) | `wordpress` | bitnami/wordpress 25.0.5 | Exposed via NGINX Ingress at `example-wordpress.sctp-sandbox.com` with Let's Encrypt TLS. |
 
-> **Persistence is disabled** on both (ephemeral, for demo use) — data is lost
-> when pods restart. Enable `persistence` in the values files for durable storage
+> **Persistence is disabled** on both for demo use, so data is lost when pods
+> restart. Enable `persistence` in the values files for durable storage
 > (requires the [ebs-csi-driver](../addons/ebs-csi-driver/) add-on).
 
-> WordPress uses its **own embedded MariaDB**, not the `postgres` deployment
-> above — the two are independent examples.
+> WordPress uses its own embedded MariaDB, not the `postgres` deployment
+> above; the two are independent examples.
 
 ## Prerequisites
 

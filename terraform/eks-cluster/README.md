@@ -1,37 +1,22 @@
-## Introduction
+# EKS Cluster
 
-This folder contains the required terraform files to create your AWS EKS cluster. 
+Terraform for the cluster itself: VPC, EKS control plane, node groups and the
+IRSA roles. The comments in the `.tf` files carry the detail; this file is
+just orientation.
 
 ## Usage
 
-You may ```terraform apply``` the files as it is, however you may refer to the comments in the TF files for guidance as well.
+Pick a `.tfvars` file for the mode you want:
 
-You may also create the ExternalDNS resources (IAM Role for Service Account) & Loki Resources (Buckets & IAM Role for Service Account) based on the boolean flags below: 
+- `standard-wo-nodegroup.tfvars` - standard EKS without initial node groups
+- `cilium-wo-nodegroup.tfvars` - Cilium mode, no node groups yet (install Cilium first)
+- `cilium-with-nodegroup.tfvars` - Cilium mode with node groups (second apply, after Cilium is in)
 
-```hcl
-# Set to true if you're making use of ExternalDNS with Route53
-variable "enable_external_dns" {
-  type    = bool
-  default = true
-}
+Three boolean variables in `variables.tf` toggle optional IRSA resources, all
+defaulting to `true`:
 
-# Set to true if you're making use of Loki with a s3 backend
-variable "enable_loki_s3" {
-  type    = bool
-  default = true
-}
+- `enable_external_dns` - IAM role for ExternalDNS with Route53
+- `enable_loki_s3` - S3 buckets + IAM role for Loki
+- `enable_ebs_csi_driver_role` - IAM role for the EBS CSI driver
 
-# Set to true if you're making use of a PersistentVolume with EBS CSI Driver Add-ons
-variable "enable_ebs_csi_driver_role" {
-  type    = bool
-  default = true
-}
-```
-
-All of the related IRSA resources are stored in ```irsa.tf``
-
-Select one of the available `.tfvars` files based on your needs:
-
-- `standard-wo-nodegroup.tfvars` - Standard EKS without initial node groups
-- `cilium-wo-nodegroup.tfvars` - Cilium setup without node groups (install Cilium first)
-- `cilium-with-nodegroup.tfvars` - Cilium setup with node groups (after Cilium is installed)
+Everything IRSA-related lives in `irsa.tf`.

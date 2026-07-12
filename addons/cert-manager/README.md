@@ -1,31 +1,16 @@
-## Pre-Requisites
+# cert-manager
 
-Note that you have to deploy the following components prior to deploying this ArgoCD helm chart:
+Deploy after the ingress layer and ExternalDNS, since the ClusterIssuers
+solve ACME HTTP-01 challenges through them.
 
-- Nginx Ingress Controller
-- ExternalDNS with IRSA
+`init.sh` installs the chart and applies the ClusterIssuer. It defaults to the
+standard-cluster files; the Cilium workflow passes the Gateway API variants:
 
-## Deploying your ArgoCD Helm Chart
-
-Refer to ```init.sh``` for deployment details.
-
-## For Cluster Issuer
-
-You will need to still substitute your email address after deploying your cert-manager chart. 
-
-```yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: # Replace with your email
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-    - http01:
-        ingress:
-          ingressClassName: nginx
+```bash
+./init.sh                                            # standard: values.yaml + cluster-issuer.yaml (nginx solver)
+./init.sh gateway-values.yaml gateway-cluster-issuer.yaml   # Cilium: gatewayHTTPRoute solver
 ```
+
+The issuer files contain an `${EMAIL}` placeholder for the ACME registration
+email; the workflows envsubst it from the `EMAIL_ADDRESS` secret. For a
+manual install, substitute it yourself before applying.

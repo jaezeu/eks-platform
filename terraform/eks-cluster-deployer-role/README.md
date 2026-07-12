@@ -1,7 +1,7 @@
 # EKS Cluster Deployer Role
 
 Terraform that creates the IAM role the GitHub Actions workflows assume (via
-OIDC) to provision and tear down clusters. **This is the bootstrap step — run it
+OIDC) to provision and tear down clusters. **This is the bootstrap step: run it
 once before any cluster workflow.**
 
 The role (`shared-eks-cluster-deployer-role`) is referenced by:
@@ -19,7 +19,7 @@ workflow.
 - A **GitHub OIDC provider** and an IAM role with a trust policy scoped to this
   repository, so workflows assume it without long-lived AWS credentials.
 - The role attaches the AWS-managed **`AdministratorAccess`** policy (broad, for
-  a learning/demo account — tighten this for any shared or production account).
+  a learning/demo account; tighten this for any shared or production account).
 
 ## Usage
 
