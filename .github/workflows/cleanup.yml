@@ -30,6 +30,8 @@ permissions:
 env:            
   ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
   OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/EKSPlatformDeployerRole
+  # renovate: datasource=github-releases depName=hashicorp/terraform
+  TERRAFORM_VERSION: 1.15.8
           
 jobs:
   cleanup:
@@ -48,6 +50,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
         with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
         
       - name: Terraform Init
