@@ -257,7 +257,7 @@ jobs:
       - name: Ingress load balancer provisioned
         if: ${{ inputs.nginx-ingress }}
         run: |
-          kubectl wait -n ingress-nginx svc -l app.kubernetes.io/component=controller \
+          kubectl wait -n ingress-nginx svc/ingress-nginx-controller \
             --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' --timeout=5m
 
       - name: Platform certificates issued
