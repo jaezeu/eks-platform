@@ -5,7 +5,7 @@ module "github-oidc" {
   create_oidc_provider = true
   create_oidc_role     = true
 
-  role_name = "shared-eks-cluster-deployer-role"
+  role_name = "EKSPlatformDeployerRole"
 
   repositories              = ["jaezeu/eks-platform"]
   oidc_role_attach_policies = ["arn:aws:iam::aws:policy/AdministratorAccess"]
