@@ -106,8 +106,9 @@ jobs:
           terraform plan -var-file=vars/cilium-wo-nodegroup.tfvars -out=cilium-cluster-wo-nodegroups.out
           terraform apply -auto-approve cilium-cluster-wo-nodegroups.out
 
-          export CLUSTER_NAME=$(terraform output -raw cluster_name)
-          export CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
+          CLUSTER_NAME=$(terraform output -raw cluster_name)
+          CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)
+          export CLUSTER_NAME CLUSTER_ENDPOINT
 
           aws eks update-kubeconfig --name "$CLUSTER_NAME"
 
@@ -124,6 +125,7 @@ jobs:
 
           echo "Installing Cilium CNI"
           pushd ../../addons/cilium
+          # shellcheck disable=SC2016  # literal ${VAR} names are envsubst syntax, not shell
           envsubst '${CLUSTER_ENDPOINT}' < values.yaml > updated-values.yaml
           mv updated-values.yaml values.yaml
           ./init.sh
@@ -133,12 +135,14 @@ jobs:
           terraform plan -var-file=vars/cilium-with-nodegroup.tfvars -out cilium-cluster-with-nodegroups.out
           terraform apply -auto-approve cilium-cluster-with-nodegroups.out
 
-          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_OUTPUT
-          echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "LOKI_S3_ROLE_ARN=$(terraform output -json loki_s3_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "LOKI_CHUNKS_BUCKET=$(terraform output -json loki_chunks_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "LOKI_RULER_BUCKET=$(terraform output -json loki_ruler_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "EBS_CSI_ROLE_ARN=$(terraform output -json ebs_csi_driver_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
+          {
+            echo "CLUSTER_NAME=$CLUSTER_NAME"
+            echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')"
+            echo "LOKI_S3_ROLE_ARN=$(terraform output -json loki_s3_role_arn | jq -r '.[0]')"
+            echo "LOKI_CHUNKS_BUCKET=$(terraform output -json loki_chunks_bucket_name | jq -r '.[0]')"
+            echo "LOKI_RULER_BUCKET=$(terraform output -json loki_ruler_bucket_name | jq -r '.[0]')"
+            echo "EBS_CSI_ROLE_ARN=$(terraform output -json ebs_csi_driver_role_arn | jq -r '.[0]')"
+          } >> "$GITHUB_OUTPUT"
         working-directory: ./terraform/eks-cluster
 
       # Install the cilium CLI on the runner (amd64; runs on the runner, not the ARM nodes).
@@ -147,7 +151,7 @@ jobs:
           # renovate: datasource=github-releases depName=cilium/cilium-cli
           CILIUM_CLI_VERSION: v0.18.7
         run: |
-          curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz{,.sha256sum}
+          curl -L --fail --remote-name-all "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz"{,.sha256sum}
           sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
           sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
           rm cilium-linux-amd64.tar.gz{,.sha256sum}
@@ -231,6 +235,7 @@ jobs:
           LOKI_CHUNKS_BUCKET: ${{ needs.deploy.outputs.loki_chunks_bucket }}
           LOKI_RULER_BUCKET: ${{ needs.deploy.outputs.loki_ruler_bucket }}
         run: |
+          # shellcheck disable=SC2016  # literal ${VAR} names are envsubst syntax, not shell
           envsubst '${REGION} ${LOKI_S3_ROLE_ARN} ${LOKI_CHUNKS_BUCKET} ${LOKI_RULER_BUCKET}' < loki-values.yaml > updated-values.yaml
           mv updated-values.yaml loki-values.yaml
           ./init.sh
@@ -246,6 +251,7 @@ jobs:
         env:
           EBS_CSI_ROLE_ARN: ${{ needs.deploy.outputs.ebs_csi_role_arn }}
         run: |
+          # shellcheck disable=SC2016  # literal ${VAR} names are envsubst syntax, not shell
           envsubst '${EBS_CSI_ROLE_ARN}' < values.yaml > updated-values.yaml
           mv updated-values.yaml values.yaml
           ./init.sh

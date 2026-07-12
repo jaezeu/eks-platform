@@ -105,12 +105,14 @@ jobs:
           terraform plan -out=cluster.out
           terraform apply -auto-approve cluster.out
 
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
-          echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "LOKI_S3_ROLE_ARN=$(terraform output -json loki_s3_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "LOKI_CHUNKS_BUCKET=$(terraform output -json loki_chunks_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "LOKI_RULER_BUCKET=$(terraform output -json loki_ruler_bucket_name | jq -r '.[0]')" >> $GITHUB_OUTPUT
-          echo "EBS_CSI_ROLE_ARN=$(terraform output -json ebs_csi_driver_role_arn | jq -r '.[0]')" >> $GITHUB_OUTPUT
+          {
+            echo "CLUSTER_NAME=$(terraform output -raw cluster_name)"
+            echo "EXTERNAL_DNS_ROLE_ARN=$(terraform output -json external_dns_role_arn | jq -r '.[0]')"
+            echo "LOKI_S3_ROLE_ARN=$(terraform output -json loki_s3_role_arn | jq -r '.[0]')"
+            echo "LOKI_CHUNKS_BUCKET=$(terraform output -json loki_chunks_bucket_name | jq -r '.[0]')"
+            echo "LOKI_RULER_BUCKET=$(terraform output -json loki_ruler_bucket_name | jq -r '.[0]')"
+            echo "EBS_CSI_ROLE_ARN=$(terraform output -json ebs_csi_driver_role_arn | jq -r '.[0]')"
+          } >> "$GITHUB_OUTPUT"
         working-directory: ./terraform/eks-cluster
 
       # Fail the deploy job (so bootstrap never runs on a broken cluster) unless every node has reached Ready.
@@ -181,6 +183,7 @@ jobs:
           LOKI_CHUNKS_BUCKET: ${{ needs.deploy.outputs.loki_chunks_bucket }}
           LOKI_RULER_BUCKET: ${{ needs.deploy.outputs.loki_ruler_bucket }}
         run: |
+          # shellcheck disable=SC2016  # literal ${VAR} names are envsubst syntax, not shell
           envsubst '${REGION} ${LOKI_S3_ROLE_ARN} ${LOKI_CHUNKS_BUCKET} ${LOKI_RULER_BUCKET}' < loki-values.yaml > updated-values.yaml
           mv updated-values.yaml loki-values.yaml
           ./init.sh
@@ -191,6 +194,7 @@ jobs:
         env:
           EBS_CSI_ROLE_ARN: ${{ needs.deploy.outputs.ebs_csi_role_arn }}
         run: |
+          # shellcheck disable=SC2016  # literal ${VAR} names are envsubst syntax, not shell
           envsubst '${EBS_CSI_ROLE_ARN}' < values.yaml > updated-values.yaml
           mv updated-values.yaml values.yaml
           ./init.sh

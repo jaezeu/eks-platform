@@ -63,7 +63,7 @@ jobs:
         id: tfout
         continue-on-error: true
         run: |
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
+          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> "$GITHUB_OUTPUT"
         working-directory: ./terraform/eks-cluster
 
       - name: Update kubeconfig
@@ -91,7 +91,7 @@ jobs:
       - name: Uninstall all Helm releases except external-dns and cilium
         continue-on-error: true
         run: |
-          helm list -A -o json | jq -r '.[] | select(.name != "external-dns" and .name != "cilium" and .name != "kyverno") | "\(.name) \(.namespace)"' | while read release ns; do
+          helm list -A -o json | jq -r '.[] | select(.name != "external-dns" and .name != "cilium" and .name != "kyverno") | "\(.name) \(.namespace)"' | while read -r release ns; do
             echo "Uninstalling Helm release: $release in namespace: $ns"
             helm uninstall "$release" -n "$ns" || true
           done
