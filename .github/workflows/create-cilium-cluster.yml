@@ -52,6 +52,38 @@ on:
         description: "Deploy Kyverno & guardrail policies?"
         default: false
         required: true
+  # Mirrors the dispatch inputs so the rehearsal workflow can call this
+  # workflow. github.event.inputs is empty under workflow_call, which is why
+  # the jobs below use the typed inputs.* context everywhere.
+  workflow_call:
+    inputs:
+      region:
+        type: string
+        default: ap-southeast-1
+      external-dns:
+        type: boolean
+        default: false
+      cert-manager:
+        type: boolean
+        default: false
+      argocd:
+        type: boolean
+        default: false
+      monitoring:
+        type: boolean
+        default: false
+      logging:
+        type: boolean
+        default: false
+      tetragon:
+        type: boolean
+        default: false
+      ebs-csi:
+        type: boolean
+        default: false
+      kyverno:
+        type: boolean
+        default: false
 
 permissions:
   id-token: write       # Required for OIDC
@@ -62,7 +94,7 @@ env:
   OIDC_ROLE: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/EKSPlatformDeployerRole
   # renovate: datasource=github-releases depName=hashicorp/terraform
   TERRAFORM_VERSION: 1.15.8
-  WORKSPACE: cilium-cluster-${{ github.event.inputs.region }}
+  WORKSPACE: cilium-cluster-${{ inputs.region }}
 
 jobs:
   deploy:
@@ -195,10 +227,10 @@ jobs:
           kubectl apply -f hubble-ui-route.yaml
 
       - name: Deploy ExternalDNS for Route53
-        if: ${{ github.event.inputs.external-dns == 'true' }}
+        if: ${{ inputs.external-dns }}
         working-directory: addons/r53-externaldns
         env:
-          REGION: ${{ github.event.inputs.region }}
+          REGION: ${{ inputs.region }}
           EXTERNAL_DNS_ROLE_ARN: ${{ needs.deploy.outputs.external_dns_role_arn }}
           CLUSTER_NAME: ${{ needs.deploy.outputs.cluster_name }}
         run: |
@@ -207,7 +239,7 @@ jobs:
           ./init.sh gateway-values.yaml
 
       - name: Deploy Cert Manager
-        if: ${{ github.event.inputs.cert-manager == 'true' }}
+        if: ${{ inputs.cert-manager }}
         working-directory: addons/cert-manager
         env:
           EMAIL: ${{ secrets.EMAIL_ADDRESS }}
@@ -216,24 +248,24 @@ jobs:
           envsubst < gateway-cluster-issuer.yaml | kubectl apply -f -
 
       - name: Deploy ArgoCD
-        if: ${{ github.event.inputs.argocd == 'true' }}
+        if: ${{ inputs.argocd }}
         working-directory: addons/argocd
         run: |
           ./init.sh gateway-values.yaml
           kubectl apply -f gateway-route.yaml
 
       - name: Deploy Prometheus and Grafana
-        if: ${{ github.event.inputs.monitoring == 'true' }}
+        if: ${{ inputs.monitoring }}
         working-directory: addons/kube-prometheus-stack
         run: |
           ./init.sh gateway-values.yaml
           kubectl apply -f gateway-route.yaml
 
       - name: Deploy Loki
-        if: ${{ github.event.inputs.logging == 'true' }}
+        if: ${{ inputs.logging }}
         working-directory: addons/loki
         env:
-          REGION: ${{ github.event.inputs.region }}
+          REGION: ${{ inputs.region }}
           LOKI_S3_ROLE_ARN: ${{ needs.deploy.outputs.loki_s3_role_arn }}
           LOKI_CHUNKS_BUCKET: ${{ needs.deploy.outputs.loki_chunks_bucket }}
           LOKI_RULER_BUCKET: ${{ needs.deploy.outputs.loki_ruler_bucket }}
@@ -244,12 +276,12 @@ jobs:
           ./init.sh
 
       - name: Deploy Tetragon
-        if: ${{ github.event.inputs.tetragon == 'true' }}
+        if: ${{ inputs.tetragon }}
         working-directory: addons/cilium/tetragon
         run: ./init.sh
 
       - name: Deploy EBS CSI Driver Resources
-        if: ${{ github.event.inputs.ebs-csi == 'true' }}
+        if: ${{ inputs.ebs-csi }}
         working-directory: addons/ebs-csi-driver
         env:
           EBS_CSI_ROLE_ARN: ${{ needs.deploy.outputs.ebs_csi_role_arn }}
@@ -263,7 +295,7 @@ jobs:
       # deletions in protected namespaces, which would interfere with the
       # add-on installs above.
       - name: Deploy Kyverno & Guardrail Policies
-        if: ${{ github.event.inputs.kyverno == 'true' }}
+        if: ${{ inputs.kyverno }}
         working-directory: addons/kyverno
         run: ./init.sh
 
