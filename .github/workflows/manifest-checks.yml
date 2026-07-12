@@ -6,6 +6,15 @@
 name: Manifest & Workflow Checks
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'addons/**'
+      - 'applications/**'
+      - 'kyverno-policies/**'
+      - 'deployment-manifests-examples/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'addons/**'
