@@ -1,5 +1,5 @@
 # Cilium CNI in ENI mode, kube-proxy free (eBPF service routing).
-# Installed by the Cilium cluster workflow BEFORE node groups join —
+# Installed by the Cilium cluster workflow BEFORE node groups join;
 # see .github/workflows/create-cilium-cluster.yml.
 #
 # ${CLUSTER_ENDPOINT} is the EKS API server host WITHOUT the https:// scheme
@@ -9,7 +9,7 @@
 #   envsubst < values.yaml > rendered-values.yaml
 #   helm upgrade --install cilium cilium/cilium ... --values rendered-values.yaml
 
-# AWS ENI IPAM — pods get VPC-routable IPs from ENIs, no overlay
+# AWS ENI IPAM: pods get VPC-routable IPs from ENIs, no overlay
 eni:
   enabled: true
   awsEnablePrefixDelegation: true
@@ -23,7 +23,7 @@ bpf:
   masquerade: false
 hostLegacyRouting: false
 
-# kube-proxy replacement — Cilium must reach the API server directly since
+# kube-proxy replacement: Cilium must reach the API server directly since
 # there is no kube-proxy to route the in-cluster kubernetes Service
 kubeProxyReplacement: true
 k8sServiceHost: ${CLUSTER_ENDPOINT}

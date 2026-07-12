@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Renders every add-on's Helm chart with the repo's values files and validates
-# the output with kubeconform — no cluster needed. Run locally or from CI
+# the output with kubeconform; no cluster needed. Run locally or from CI
 # (.github/workflows/manifest-checks.yml).
 #
 # Each add-on's init.sh stays the single source of truth for chart, version and

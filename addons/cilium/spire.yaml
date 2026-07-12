@@ -1,4 +1,4 @@
-# SPIRE-backed mutual authentication (beta) — layered on top of values.yaml by
+# SPIRE-backed mutual authentication (beta), layered on top of values.yaml by
 # init.sh (helm merges values files left to right).
 #
 # The embedded SPIRE server/agents install into the cilium-spire namespace.
@@ -21,7 +21,7 @@ authentication:
           # emptyDir instead of a PVC: the EBS CSI driver (and any StorageClass)
           # is installed by the bootstrap job AFTER Cilium, so a PVC here would
           # deadlock the install. Identities are simply re-issued if the SPIRE
-          # server pod restarts — fine for a short-lived teaching cluster.
+          # server pod restarts; fine for a short-lived teaching cluster.
           dataStorage:
             enabled: false
           # run SPIRE server as root so it can write the socket path

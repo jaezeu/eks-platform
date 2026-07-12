@@ -1,8 +1,8 @@
-# Gateway API equivalent of ingress-coaching/ingress.yaml — part 1 of 2.
+# Gateway API equivalent of ingress-coaching/ingress.yaml, part 1 of 2.
 #
 # On the Cilium cluster there is no Ingress. Instead, the platform team runs a
 # single shared Gateway (`shared-gateway` in the `gateway` namespace) and each
-# team attaches its OWN listener to it with a ListenerSet — no change to the
+# team attaches its OWN listener to it with a ListenerSet, with no change to the
 # Gateway itself. The cert-manager annotation issues the TLS cert into the
 # Secret named under certificateRefs (equivalent of Ingress spec.tls).
 apiVersion: gateway.networking.k8s.io/v1

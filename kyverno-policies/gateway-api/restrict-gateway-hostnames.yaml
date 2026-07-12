@@ -3,7 +3,7 @@
 # guardrail must match those kinds too.
 #
 # Lives in this subdirectory (NOT applied by `kubectl apply -f kyverno-policies/`,
-# which is non-recursive) because it references Gateway API kinds — Kyverno can
+# which is non-recursive) because it references Gateway API kinds; Kyverno can
 # only admit it on clusters where those CRDs exist. addons/kyverno/init.sh
 # applies it conditionally when the HTTPRoute CRD is present.
 apiVersion: kyverno.io/v1

@@ -7,8 +7,8 @@
 #     (the gateway-shim, driven by the cert-manager.io/cluster-issuer annotation).
 #
 # Kept as a SEPARATE file (not just enabled in values.yaml) because turning this
-# on for a cluster that has no Gateway API CRDs installed — the standard/nginx
-# cluster — makes the cert-manager controller error trying to watch Gateways.
+# on for a cluster that has no Gateway API CRDs installed (the standard/nginx
+# cluster) makes the cert-manager controller error trying to watch Gateways.
 crds:
   enabled: true
 config:
@@ -16,7 +16,7 @@ config:
   kind: ControllerConfiguration
   # Reconcile Gateway resources (ACME gatewayHTTPRoute solver + gateway-shim)
   enableGatewayAPI: true
-  # Also reconcile ListenerSet resources (alpha since cert-manager 1.20) —
+  # Also reconcile ListenerSet resources (alpha since cert-manager 1.20);
   # this is what issues the certs referenced by each add-on's ListenerSet.
   # Requires the Gateway API v1.5+ standard-channel CRDs (applied by the
   # workflow before the bootstrap job runs).

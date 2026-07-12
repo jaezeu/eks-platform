@@ -1,4 +1,4 @@
-# Gateway API equivalent of ingress-coaching/ingress.yaml — part 2 of 2.
+# Gateway API equivalent of ingress-coaching/ingress.yaml, part 2 of 2.
 #
 # The HTTPRoute plays the role of the Ingress `rules`: match requests for the
 # hostname and forward them to the Service. It attaches to OUR listener

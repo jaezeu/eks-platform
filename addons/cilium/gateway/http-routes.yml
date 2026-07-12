@@ -5,7 +5,7 @@
 # HTTPS routes do NOT live here: each add-on brings its own listener + route
 # via a ListenerSet (see addons/argocd/gateway-route.yaml and
 # addons/kube-prometheus-stack/gateway-route.yaml, applied by the Cilium
-# workflow) — same pattern as deployment-manifests-examples/gateway-api-coaching.
+# workflow), same pattern as deployment-manifests-examples/gateway-api-coaching.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

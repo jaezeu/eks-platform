@@ -18,7 +18,7 @@ helm upgrade --install kyverno kyverno --repo https://kyverno.github.io/kyverno/
 kubectl apply -f ../../kyverno-policies/
 
 # The Gateway API guardrail references HTTPRoute/ListenerSet kinds, which only
-# exist on Cilium clusters — apply it only where those CRDs are installed.
+# exist on Cilium clusters; apply it only where those CRDs are installed.
 if kubectl get crd httproutes.gateway.networking.k8s.io >/dev/null 2>&1; then
   kubectl apply -f ../../kyverno-policies/gateway-api/
 fi

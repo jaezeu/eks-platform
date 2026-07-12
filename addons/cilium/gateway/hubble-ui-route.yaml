@@ -1,4 +1,4 @@
-# Hubble UI exposed via Gateway API — same ListenerSet + HTTPRoute pattern as
+# Hubble UI exposed via Gateway API, same ListenerSet + HTTPRoute pattern as
 # the other admin UIs (see addons/argocd/gateway-route.yaml). Applied by the
 # Cilium workflow together with the shared Gateway.
 #

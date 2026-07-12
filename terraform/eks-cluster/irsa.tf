@@ -91,7 +91,7 @@ resource "aws_s3_bucket_public_access_block" "loki_ruler" {
   restrict_public_buckets = true
 }
 
-# SSE-S3 (AES256) is sufficient for sandbox log data — a customer-managed KMS
+# SSE-S3 (AES256) is sufficient for sandbox log data; a customer-managed KMS
 # key would add per-request KMS cost and key lifecycle management for no
 # practical gain here.
 #tfsec:ignore:aws-s3-encryption-customer-key
@@ -126,7 +126,7 @@ module "loki_s3_role" {
 
   name = "${local.name_prefix}-cluster-loki-s3-role"
 
-  # No built-in Loki policy in the module — attach the S3 access inline
+  # No built-in Loki policy in the module; attach the S3 access inline
   create_inline_policy = true
   inline_policy_permissions = {
     LokiS3 = {

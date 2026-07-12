@@ -1,8 +1,8 @@
-# Shared Cilium Gateway — the single L7 entrypoint for the Cilium cluster.
+# Shared Cilium Gateway: the single L7 entrypoint for the Cilium cluster.
 #
 # This Gateway owns only a plain HTTP :80 listener (used to serve ACME HTTP-01
 # challenges and any plain-HTTP traffic). Per-app HTTPS listeners are NOT defined
-# here — each add-on attaches its own via a ListenerSet (see each add-on's
+# here; each add-on attaches its own via a ListenerSet (see each add-on's
 # gateway-route.yaml), which is what `allowedListeners` below permits.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -12,7 +12,7 @@ metadata:
 spec:
   gatewayClassName: cilium
   # Let ListenerSets in any namespace attach their listeners to this Gateway.
-  # (Default is None — no ListenerSets allowed — so this line is required.)
+  # (Default is None, meaning no ListenerSets allowed, so this line is required.)
   allowedListeners:
     namespaces:
       from: All

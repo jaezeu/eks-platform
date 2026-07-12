@@ -1,14 +1,14 @@
 # ArgoCD exposed via Gateway API on the Cilium cluster.
 #
-# ListenerSet — attaches an HTTPS listener for the ArgoCD hostname onto the
+# ListenerSet: attaches an HTTPS listener for the ArgoCD hostname onto the
 #   shared Gateway (in the `gateway` namespace) without editing that Gateway.
 #   The cert-manager annotation asks cert-manager to issue the Secret named in
 #   certificateRefs (gateway-shim).
-# HTTPRoute — routes the hostname to argocd-server (HTTP :80, TLS already
+# HTTPRoute: routes the hostname to argocd-server (HTTP :80, TLS already
 #   terminated at the Gateway).
 #
 # Requires: Cilium >= 1.20.0-pre.4 (ListenerSet support) and cert-manager's
-# ListenerSet reconciliation flags — both set by this repo's Cilium workflow
+# ListenerSet reconciliation flags; both set by this repo's Cilium workflow
 # (see addons/cert-manager/gateway-values.yaml).
 apiVersion: gateway.networking.k8s.io/v1
 kind: ListenerSet

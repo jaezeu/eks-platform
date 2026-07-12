@@ -1,6 +1,6 @@
 # ArgoCD values for the Cilium (Gateway API) cluster.
 #
-# No Ingress here — the server is exposed through a ListenerSet + HTTPRoute
+# No Ingress here; the server is exposed through a ListenerSet + HTTPRoute
 # (see gateway-route.yaml). TLS is terminated at the shared Cilium Gateway and
 # forwarded as plain HTTP to argocd-server:80, so the server runs in insecure
 # mode (otherwise it would try to serve HTTPS on that port and redirect-loop).
