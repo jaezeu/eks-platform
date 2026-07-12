@@ -21,10 +21,7 @@ spec:
                 - kyverno
               operations:
                 - DELETE
-      # Guardrail for humans only: in-cluster controllers (replicaset
-      # controller, garbage collector, cert-manager cleaning up ACME
-      # solvers, ArgoCD pruning, ...) must stay able to manage resource
-      # lifecycles, or rollouts and cert issuance wedge in these namespaces.
+      # Guardrail for humans only: in-cluster controllers must stay able to manage resource lifecycles, or rollouts and cert issuance in these namespaces.
       exclude:
         any:
           - subjects:
