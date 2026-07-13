@@ -1,8 +1,8 @@
 <div align="center">
 
-# EKS Platform
+# EKS Classroom Platform
 
-*Two EKS cluster flavors, bootstrapped, verified end to end, and torn down by CI —
+*Two EKS cluster flavors, bootstrapped, verified end to end, and torn down by CI -
 rebuilt from nothing every month to prove it.*
 
 [![Terraform Checks](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml)
@@ -21,7 +21,7 @@ rebuilt from nothing every month to prove it.*
 
 Terraform and Helm for spinning up demo EKS clusters for a teaching course:
 one standard (VPC CNI + NGINX Ingress), one Cilium kube-proxy-free (eBPF +
-Gateway API with per-team `ListenerSet`s), plus the add-ons, guardrail
+Gateway API with per-team `ListenerSet`), plus the add-ons, guardrail
 policies and example manifests used in lessons.
 
 > [!WARNING]
@@ -144,11 +144,12 @@ Use the workflows in `.github/workflows` to create and destroy clusters:
 - `cleanup.yml` - tears down everything the cluster workflows created
 
 Every cluster workflow ends with a **verify job** (workload rollouts, policies,
-TLS certs, live HTTPS checks), and cleanup ends with a **verify-cleanup job**
-that fails unless the account is really empty: no state, no cluster, no orphaned
-load balancers, DNS records or volumes. A [monthly rehearsal](.github/workflows/rehearsal.yml)
-rebuilds both clusters from nothing and tears them down again to prove the
-whole lifecycle still works - and skips itself whenever a live cluster is up.
+TLS certs, live HTTPS checks). Cleanup **sweeps orphans** that terraform can't
+see (load balancers by cluster tag, DNS records by external-dns ownership)
+before `terraform destroy` removes the rest. A
+[monthly rehearsal](.github/workflows/rehearsal.yml) rebuilds both clusters
+from nothing and tears them down again to prove the whole lifecycle still
+works - and skips itself whenever a live cluster is up.
 
 > [!NOTE]
 > **The deployer role uses `AdministratorAccess`.** This is a deliberate
