@@ -1,16 +1,13 @@
-# Monthly proof that the platform can be rebuilt from nothing: create both
-# cluster types with every addon enabled, let their verify jobs pass, then
-# tear down and let verify-cleanup prove nothing was left behind. Reuses the
-# same workflows that manual dispatches run.
+# Monthly proof the platform can be rebuilt from nothing: create both cluster
+# types with every addon, let their verify jobs pass, then tear down again.
+# Reuses the same workflows that manual dispatches run.
 #
-# The precheck makes the rehearsal yield to live infrastructure: cluster names
-# and DNS hostnames are fixed, so rehearsing while a cluster is up would apply
-# onto it and then destroy it. If any cluster is live (either region - the
-# Route53 zone is shared), every leg skips and the report is green: during
-# those weeks the platform is being proven by real usage instead.
+# Cluster names and DNS hostnames are fixed, so rehearsing over a live cluster
+# would destroy it: the precheck skips every leg (report stays green) if any
+# cluster is up in either region.
 #
 # NOTE: GitHub disables scheduled workflows after 60 days without repo
-# activity; re-enable from the Actions tab if the repo goes quiet.
+# activity; re-enable from the Actions tab.
 name: Monthly Platform Rehearsal
 
 on:
