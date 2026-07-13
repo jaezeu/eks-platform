@@ -16,10 +16,17 @@ workflow.
 
 ## What it creates
 
-- A **GitHub OIDC provider** and an IAM role with a trust policy scoped to this
-  repository, so workflows assume it without long-lived AWS credentials.
+- An IAM role with a trust policy scoped to this repository, so workflows assume
+  it via OIDC without long-lived AWS credentials.
 - The role attaches the AWS-managed **`AdministratorAccess`** policy (broad, for
   a learning/demo account; tighten this for any shared or production account).
+
+> [!IMPORTANT]
+> The **GitHub OIDC provider is a shared, account-level prerequisite** (only one
+> can exist per account) and is owned by the central account-bootstrap stack.
+> This stack looks it up ([`data.tf`](data.tf)) rather than creating it, so the
+> provider must already exist before you apply. If it does not, `plan` fails
+> with "no OIDC provider found for URL".
 
 ## Usage
 

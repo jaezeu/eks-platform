@@ -5,9 +5,9 @@
 *Two EKS cluster flavors, bootstrapped, verified end to end, and torn down by CI -
 rebuilt from nothing every month to prove it.*
 
-[![Terraform Checks](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/terraform-checks.yml)
-[![Manifest & Workflow Checks](https://github.com/jaezeu/eks-platform/actions/workflows/manifest-checks.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/manifest-checks.yml)
-[![Monthly Platform Rehearsal](https://github.com/jaezeu/eks-platform/actions/workflows/rehearsal.yml/badge.svg)](https://github.com/jaezeu/eks-platform/actions/workflows/rehearsal.yml)
+[![Terraform Checks](https://github.com/jaezeu/eks-classroom/actions/workflows/terraform-checks.yml/badge.svg)](https://github.com/jaezeu/eks-classroom/actions/workflows/terraform-checks.yml)
+[![Manifest & Workflow Checks](https://github.com/jaezeu/eks-classroom/actions/workflows/manifest-checks.yml/badge.svg)](https://github.com/jaezeu/eks-classroom/actions/workflows/manifest-checks.yml)
+[![Monthly Platform Rehearsal](https://github.com/jaezeu/eks-classroom/actions/workflows/rehearsal.yml/badge.svg)](https://github.com/jaezeu/eks-classroom/actions/workflows/rehearsal.yml)
 
 ![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.15-7B42BC?logo=terraform&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/EKS-v1.36-326CE5?logo=kubernetes&logoColor=white)
@@ -15,7 +15,7 @@ rebuilt from nothing every month to prove it.*
 ![Gateway API](https://img.shields.io/badge/Gateway%20API-v1.5%20%2B%20ListenerSet-326CE5?logo=kubernetes&logoColor=white)
 ![Helm](https://img.shields.io/badge/Helm-v3-0F1689?logo=helm&logoColor=white)
 ![Renovate](https://img.shields.io/badge/Renovate-enabled-1A1F6C?logo=renovate&logoColor=white)
-![License](https://img.shields.io/github/license/jaezeu/eks-platform?color=blue)
+![License](https://img.shields.io/github/license/jaezeu/eks-classroom?color=blue)
 
 </div>
 
@@ -138,7 +138,7 @@ node groups, add-ons, then workloads.
 
 Use the workflows in `.github/workflows` to create and destroy clusters:
 
-- `create-deployer-role.yml` - creates the IAM role the other workflows assume (run first)
+- `create-deployer-role.yml` - creates the IAM role the other workflows assume (run first; the account's shared GitHub OIDC provider must already exist, this looks it up rather than creating it)
 - `create-standard-cluster.yml` - standard cluster: VPC CNI + add-ons
 - `create-cilium-cluster.yml` - Cilium cluster: Cilium CNI + add-ons
 - `cleanup.yml` - tears down everything the cluster workflows created
