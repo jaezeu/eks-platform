@@ -24,6 +24,16 @@ one standard (VPC CNI + NGINX Ingress), one Cilium kube-proxy-free (eBPF +
 Gateway API with per-team `ListenerSet`), plus the add-ons, guardrail
 policies and example manifests used in lessons.
 
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Architecture Overview](#architecture-overview)
+- [Repository Structure](#repository-structure)
+- [Quick Start](#quick-start)
+- [Fork & adapt](#fork--adapt)
+- [Contributing](#contributing)
+- [License](#license)
+
 > [!WARNING]
 > **This provisions billable AWS resources:** an EKS control plane, ARM64 EC2
 > node groups, a NAT gateway, load balancers and S3 buckets. Costs accrue while
@@ -121,7 +131,7 @@ example walks through the same pattern side by side with its classic
 |-----------|------------|
 | [terraform/eks-cluster/](terraform/eks-cluster/) | The cluster itself: VPC, EKS, node groups, IRSA roles. `.tfvars` files select standard vs Cilium mode. |
 | [terraform/eks-cluster-deployer-role/](terraform/eks-cluster-deployer-role/) | Bootstrap step: the IAM role (GitHub OIDC) that the workflows assume. Run once, first. |
-| [addons/](addons/) | One directory per Helm add-on (argocd, cert-manager, cilium, ebs-csi-driver, kube-prometheus-stack, kyverno, loki, nginx-ingress, r53-externaldns). Each has its values file(s) and an `init.sh`. |
+| [addons/](addons/) | One directory per Helm add-on (argocd, cert-manager, cilium, ebs-csi-driver, kube-prometheus-stack, kyverno, loki, nginx-ingress, r53-externaldns). Each has its values file and an `init.sh`. |
 | [kyverno-policies/](kyverno-policies/) | The guardrail admission policies that `addons/kyverno` enforces. `gateway-api/` subfolder applies only on Cilium clusters. |
 | [applications/](applications/) | Sample Helm workloads (postgres, wordpress) used in lessons. |
 | [deployment-manifests-examples/](deployment-manifests-examples/) | Plain-manifest teaching examples. `ingress-coaching/` targets the standard cluster, `gateway-api-coaching/` the Cilium one. |
